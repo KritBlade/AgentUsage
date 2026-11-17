@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2C3039"/>
+      <stop offset="1" stop-color="#1A1D23"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="248" height="248" rx="46" fill="url(#tile)" stroke="#3A3F4A" stroke-width="2"/>
+  <polygon points="45.00,62.00 73.60,62.00 64.60,86.00 36.00,86.00" fill="#E07B53" stroke="#E07B53" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="81.60,62.00 110.20,62.00 101.20,86.00 72.60,86.00" fill="#E07B53" stroke="#E07B53" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="118.20,62.00 146.80,62.00 137.80,86.00 109.20,86.00" fill="#E07B53" stroke="#E07B53" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="154.80,62.00 183.40,62.00 174.40,86.00 145.80,86.00" fill="#3A3F4B" stroke="#3A3F4B" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="191.40,62.00 220.00,62.00 211.00,86.00 182.40,86.00" fill="#3A3F4B" stroke="#3A3F4B" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="45.00,98.00 73.60,98.00 64.60,122.00 36.00,122.00" fill="#ECEEF2" stroke="#ECEEF2" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="81.60,98.00 110.20,98.00 101.20,122.00 72.60,122.00" fill="#ECEEF2" stroke="#ECEEF2" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="118.20,98.00 146.80,98.00 137.80,122.00 109.20,122.00" fill="#ECEEF2" stroke="#ECEEF2" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="154.80,98.00 183.40,98.00 174.40,122.00 145.80,122.00" fill="#ECEEF2" stroke="#ECEEF2" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="191.40,98.00 220.00,98.00 211.00,122.00 182.40,122.00" fill="#3A3F4B" stroke="#3A3F4B" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="45.00,134.00 73.60,134.00 64.60,158.00 36.00,158.00" fill="#A48BFA" stroke="#A48BFA" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="81.60,134.00 110.20,134.00 101.20,158.00 72.60,158.00" fill="#A48BFA" stroke="#A48BFA" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="118.20,134.00 146.80,134.00 137.80,158.00 109.20,158.00" fill="#3A3F4B" stroke="#3A3F4B" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="154.80,134.00 183.40,134.00 174.40,158.00 145.80,158.00" fill="#3A3F4B" stroke="#3A3F4B" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="191.40,134.00 220.00,134.00 211.00,158.00 182.40,158.00" fill="#3A3F4B" stroke="#3A3F4B" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="45.00,170.00 73.60,170.00 64.60,194.00 36.00,194.00" fill="#4F8EF7" stroke="#4F8EF7" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="81.60,170.00 110.20,170.00 101.20,194.00 72.60,194.00" fill="#4F8EF7" stroke="#4F8EF7" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="118.20,170.00 146.80,170.00 137.80,194.00 109.20,194.00" fill="#4F8EF7" stroke="#4F8EF7" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="154.80,170.00 183.40,170.00 174.40,194.00 145.80,194.00" fill="#3A3F4B" stroke="#3A3F4B" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="191.40,170.00 220.00,170.00 211.00,194.00 182.40,194.00" fill="#3A3F4B" stroke="#3A3F4B" stroke-width="3" stroke-linejoin="round"/>
+</svg>

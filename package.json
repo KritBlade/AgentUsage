@@ -1,0 +1,197 @@
+{
+	"name": "agent-usage",
+	"displayName": "AgentUsage",
+	"description": "Usage limits of the Claude Code, Codex, Grok and Antigravity CLIs as traffic-light dots in the status bar, with every agent's details on hover.",
+	"version": "0.4.1",
+	"publisher": "goten",
+	"license": "MIT",
+	"icon": "images/agent-usage-icon.png",
+	"engines": {
+		"vscode": "^1.85.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"keywords": [
+		"claude",
+		"claude code",
+		"codex",
+		"grok",
+		"antigravity",
+		"agy",
+		"usage",
+		"quota",
+		"rate limit",
+		"status bar"
+	],
+	"main": "./src/index.js",
+	"activationEvents": [
+		"onStartupFinished"
+	],
+	"contributes": {
+		"commands": [
+			{
+				"command": "agentUsage.showUsagePopup",
+				"title": "AgentUsage: Show Usage Popup"
+			},
+			{
+				"command": "agentUsage.refresh",
+				"title": "AgentUsage: Refresh"
+			},
+			{
+				"command": "agentUsage.openSettings",
+				"title": "AgentUsage: Open Settings"
+			},
+			{
+				"command": "agentUsage.chooseStatusBarDots",
+				"title": "AgentUsage: Choose Status Bar Dots"
+			},
+			{
+				"command": "agentUsage.showLog",
+				"title": "AgentUsage: Show Log"
+			}
+		],
+		"menus": {
+			"commandPalette": [
+				{
+					"command": "agentUsage.showUsagePopup",
+					"when": "false"
+				}
+			]
+		},
+		"configuration": {
+			"title": "AgentUsage",
+			"properties": {
+				"agentUsage.statusBarDots": {
+					"order": 1,
+					"type": "object",
+					"properties": {
+						"claude/session": {
+							"type": "boolean",
+							"default": false,
+							"description": "Claude Code: 5h (the current session)"
+						},
+						"claude/weekly": {
+							"type": "boolean",
+							"default": false,
+							"description": "Claude Code: Weekly (all models)"
+						},
+						"claude/weekly:Fable": {
+							"type": "boolean",
+							"default": false,
+							"description": "Claude Code: Fable's own weekly limit"
+						},
+						"codex/session": {
+							"type": "boolean",
+							"default": false,
+							"description": "Codex: its short window, today 5h"
+						},
+						"codex/weekly": {
+							"type": "boolean",
+							"default": false,
+							"description": "Codex: Weekly"
+						},
+						"grok/credits": {
+							"type": "boolean",
+							"default": false,
+							"description": "Grok: credits used this period (Weekly or Monthly)"
+						},
+						"antigravity/gemini-5h": {
+							"type": "boolean",
+							"default": false,
+							"description": "Antigravity: Gemini 5h"
+						},
+						"antigravity/gemini-weekly": {
+							"type": "boolean",
+							"default": false,
+							"description": "Antigravity: Gemini Weekly"
+						},
+						"antigravity/3p-5h": {
+							"type": "boolean",
+							"default": false,
+							"description": "Antigravity: Claude and GPT 5h"
+						},
+						"antigravity/3p-weekly": {
+							"type": "boolean",
+							"default": false,
+							"description": "Antigravity: Claude and GPT Weekly"
+						}
+					},
+					"additionalProperties": false,
+					"default": {},
+					"markdownDescription": "Dots on the status bar. **None checked**: they are placed automatically. Each connected agent gets an equal share of `#agentUsage.maxStatusBarDots#` (with four agents, one each), and the first agent in `#agentUsage.agents#` takes any left over. **Some checked**: exactly the checked dots show, up to the maximum. Hover a name to see its window: `session` is the 5-hour window, and Antigravity's `3p` is its Claude and GPT group."
+				},
+				"agentUsage.maxStatusBarDots": {
+					"order": 2,
+					"type": "integer",
+					"default": 4,
+					"minimum": 1,
+					"maximum": 8,
+					"markdownDescription": "Most dots the status bar shows. With none checked in `#agentUsage.statusBarDots#`, they are shared equally between the connected agents."
+				},
+				"agentUsage.isAgentNameShown": {
+					"order": 3,
+					"type": "boolean",
+					"default": true,
+					"description": "Show each agent's name beside its icon on the status bar. Off: only the icons, for a shorter status bar."
+				},
+				"agentUsage.agents": {
+					"order": 4,
+					"type": "array",
+					"items": {
+						"type": "string",
+						"enum": [
+							"claude",
+							"codex",
+							"grok",
+							"antigravity"
+						]
+					},
+					"uniqueItems": true,
+					"default": [
+						"claude",
+						"codex",
+						"grok",
+						"antigravity"
+					],
+					"markdownDescription": "Agents to read, in status bar order. When no dot is checked in `#agentUsage.statusBarDots#`, the first connected agent takes the dots left over."
+				},
+				"agentUsage.refreshIntervalSeconds": {
+					"order": 5,
+					"type": "number",
+					"default": 60,
+					"minimum": 30,
+					"description": "Seconds between reads of each agent's usage (at least 30). The hover shows the last reading and never reads by itself. Every VS Code window reads on its own, so a short interval with many windows open can make a provider answer 429."
+				},
+				"agentUsage.codexCommand": {
+					"order": 6,
+					"type": "string",
+					"default": "codex",
+					"description": "Command run for Codex's usage (`<command> -s read-only -a never app-server`); a name on VS Code's PATH or a full path."
+				},
+				"agentUsage.antigravityCommand": {
+					"order": 7,
+					"type": "string",
+					"default": "agy",
+					"description": "Command run for Antigravity's usage (`<command> -p /quota`); a name on VS Code's PATH or a full path."
+				},
+				"agentUsage.logVerbosity": {
+					"order": 8,
+					"type": "string",
+					"enum": [
+						"off",
+						"lifecycle",
+						"verbose",
+						"trace"
+					],
+					"default": "off",
+					"markdownDescription": "Detail in the **AgentUsage** output channel. Errors and warnings always log; `verbose` adds one line per read, `trace` the raw answers."
+				}
+			}
+		}
+	},
+	"scripts": {
+		"test": "node --test \"tests/*.test.js\"",
+		"package": "npx --yes @vscode/vsce@3 package --allow-missing-repository"
+	}
+}

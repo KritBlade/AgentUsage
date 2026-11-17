@@ -1,0 +1,10 @@
+plans/**
+tests/**
+tools/**
+.context/**
+.github/**
+.vscode/**
+*.vsix
+.vscode-test/**
+images/icon.png
+images/*.svg

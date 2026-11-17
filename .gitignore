@@ -1,0 +1,13 @@
+# SigMap's generated context, kept local
+.github/
+.context/
+
+# Built and generated output: VSIX files go to GitHub Releases, not the tree
+*.vsix
+.vscode-test/
+__pycache__/
+node_modules/
+
+# Operating system files
+.DS_Store
+Thumbs.db
