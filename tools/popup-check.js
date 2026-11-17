@@ -12,6 +12,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
+const MANIFEST = require('../package.json');
+const EXTENSION_ID = `${MANIFEST.publisher}.${MANIFEST.name}`;
 const PROFILE = path.join(ROOT, '.vscode-test');
 const PORT = 9333;
 const CLICK_LIMIT_MS = 500;
@@ -84,7 +86,7 @@ async function runChecks(devtools) {
         await devtools.send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 });
         await devtools.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 });
     };
-    const ITEM = `[...document.querySelectorAll('.statusbar-item')].find((element) => element.id === 'goten.agent-usage.agentUsage.status')`;
+    const ITEM = `[...document.querySelectorAll('.statusbar-item')].find((element) => element.id === '${EXTENSION_ID}.agentUsage.status')`;
     const IS_POPUP_OPEN = `[...document.querySelectorAll('.workbench-hover, .monaco-hover')].some((element) => element.offsetParent !== null && element.innerText.includes('Refresh'))`;
     const waitForPopup = async (startMs, limitMs) => {
         while (Date.now() - startMs < limitMs) {
@@ -140,7 +142,7 @@ async function runChecks(devtools) {
     );
     const search = await evaluate(`document.querySelector('.settings-editor .suggest-input-container .view-lines')?.innerText ?? null`);
     const checkboxCount = await evaluate(`document.querySelectorAll('.settings-editor .setting-list-object-input-key-checkbox').length`);
-    record('its Settings link opens the filtered settings page', search === '@ext:goten.agent-usage', `search ${JSON.stringify(search)}`);
+    record('its Settings link opens the filtered settings page', search === `@ext:${EXTENSION_ID}`, `search ${JSON.stringify(search)}`);
     record('the settings page shows the ten dot checkboxes', checkboxCount === 10, `${checkboxCount} checkboxes`);
     return results;
 }

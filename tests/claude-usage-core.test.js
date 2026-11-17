@@ -86,7 +86,7 @@ test('the keychain account is $USER or the OS user when plain, else claude-code-
         calls += 1;
         return name;
     };
-    assert.equal(core.claudeKeychainAccount({ USER: 'goten' }, osUser('ignored')), 'goten');
+    assert.equal(core.claudeKeychainAccount({ USER: 'kritblade' }, osUser('ignored')), 'kritblade');
     assert.equal(calls, 0, 'the OS user name is read only when $USER is unset');
     assert.equal(core.claudeKeychainAccount({}, osUser('alice')), 'alice');
     assert.equal(core.claudeKeychainAccount({ USER: 'has space' }, osUser('alice')), 'claude-code-user');

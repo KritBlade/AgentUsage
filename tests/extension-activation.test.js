@@ -85,7 +85,7 @@ function activateWithStandIns(t) {
         if (agentMatch) return standInAgent(agentMatch[1]);
         return originalLoad.call(this, request, parent, ...rest);
     };
-    const context = { subscriptions: [], extension: { id: 'goten.agent-usage' } };
+    const context = { subscriptions: [], extension: { id: 'kritblade.agent-usage' } };
     let log;
     try {
         log = require('../src/shared/log.js');
@@ -117,7 +117,7 @@ test('each popup link closes the popup before it acts', async (t) => {
     const { calls, handlers } = activateWithStandIns(t);
     await settle();
     const linkActions = {
-        'agentUsage.openSettings': ['executeCommand', 'workbench.action.openSettings', '@ext:goten.agent-usage'],
+        'agentUsage.openSettings': ['executeCommand', 'workbench.action.openSettings', '@ext:kritblade.agent-usage'],
         'agentUsage.showLog': ['log.show'],
         'agentUsage.refresh': undefined,
         'agentUsage.chooseStatusBarDots': undefined,

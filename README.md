@@ -1,7 +1,7 @@
 # AgentUsage
 
 Usage limits of four coding-agent CLIs (Claude Code, Codex, Grok and Antigravity's `agy`) as traffic-light dots in
-the VS Code status bar. Hover the item for every agent's details.
+the VS Code status bar. Click the item for every agent's details.
 
 ````
 ✦ Claude 🟢 5h 27% | 🤖 Codex 🟢 5h 11% | ⚡ Grok 🟢 Weekly 16% | 🚀 Antigravity 🟢 Gemini 5h 8%

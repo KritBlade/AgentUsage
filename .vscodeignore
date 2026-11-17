@@ -8,3 +8,4 @@ tools/**
 .vscode-test/**
 images/icon.png
 images/*.svg
+.gitignore

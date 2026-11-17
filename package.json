@@ -1,9 +1,9 @@
 {
 	"name": "agent-usage",
 	"displayName": "AgentUsage",
-	"description": "Usage limits of the Claude Code, Codex, Grok and Antigravity CLIs as traffic-light dots in the status bar, with every agent's details on hover.",
+	"description": "Usage limits of the Claude Code, Codex, Grok and Antigravity CLIs as traffic-light dots in the status bar, with every agent's details in a popup.",
 	"version": "0.4.1",
-	"publisher": "goten",
+	"publisher": "kritblade",
 	"license": "MIT",
 	"icon": "images/agent-usage-icon.png",
 	"engines": {

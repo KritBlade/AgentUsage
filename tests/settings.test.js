@@ -104,8 +104,8 @@ test('saving dots writes the checked keys to the user settings, and saving none 
 
 test('the settings page opens filtered to the extension (D14)', async () => {
     const { settingsModule, commands } = loadSettings();
-    await settingsModule.openSettingsPage('goten.agent-usage');
-    assert.deepEqual(commands, [['workbench.action.openSettings', '@ext:goten.agent-usage']]);
+    await settingsModule.openSettingsPage('kritblade.agent-usage');
+    assert.deepEqual(commands, [['workbench.action.openSettings', '@ext:kritblade.agent-usage']]);
 });
 
 test('the checkboxes are exactly the agents\' automatic-order windows, and render as a checkbox list', () => {
