@@ -21,7 +21,7 @@ dots are chosen on the settings page; names can be hidden; reads run every minut
   - your look at 0.4.1 (V1);
   - P2's renewal half;
   - the Windows run (V2).
-- The old extension stays installed until then (D8).
+- The old fork is uninstalled: AgentUsage has all its features (D8).
 
 AgentUsage shows how much of each coding agent's usage limits is spent: Claude Code, Codex, Grok and Antigravity
 (`agy`). One status bar item carries at most four traffic-light dots. Until the user checks dots on AgentUsage's
@@ -67,7 +67,8 @@ the last numbers and marks nothing in the status bar, because only an expired to
   location". What was measured is in §1.
 - **D6 — English only** (2026-11-17).
 - **D7 — VS Code's own hover** (2026-11-17).
-- **D8 — the old extension stays installed until AgentUsage is complete** (2026-11-17).
+- **D8 — the old fork stays uninstalled; AgentUsage replaces it** (2026-11-17): "no need to reinstall my old fork,
+  AgentUsage have all the feature from the old fork".
 - **D9 — Grok's token is read, never renewed; once it has expired, the hover says to run `grok`** (2026-11-17): "read
   the token, don't renew it. just show run grok to fresh token. you can try grok agent stdio and see if it renews
   token WITHOUT breaking login".
@@ -127,7 +128,7 @@ the last numbers and marks nothing in the status bar, because only an expired to
 | U5 | Popup: one table per agent with a reading or a failed read, the Not connected and Reading lines, four links: Refresh, Settings, Status bar dots, Log (§4); built at each redraw, never on opening (D16); opened at once by a click (D17); closed by any of its links (D18) | built; verified live | `usage-display-core.test.js` checks the markdown (tables, the empty Resets cell, the breakdown, notes, each failure line, the four links in order); `extension-activation.test.js`: the click command is `agentUsage.showUsagePopup` (hidden from the Command Palette) and runs `workbench.action.showHover`; each of the four links hides and shows the item before it acts. `node tools/popup-check.js`, live in an isolated VS Code 1.146 with real mouse events: the click opened it in 23–50 ms against 1528–1539 ms for a resting mouse; a click elsewhere closed it; its Settings link closed it and opened the page filtered to `@ext:kritblade.agent-usage` with ten checkboxes; the item kept its neighbours (`status.notifications`, `chat.statusBarEntry`). V1 owes your look |
 | T1 | Tests run with `npm test` (`node --test "tests/*.test.js"`); no `vscode` needed | built | 82 pass. `node tools/mutation-check.js` breaks 29 rules one at a time, and each one fails a test. The new rules: the click opening the popup, its command hidden from the palette, a popup link closing the popup, closing dropping the entry, the checked filter, the checked limit, the checked-or-automatic switch, the fair share, names hidden, the Settings link, the No reading now group, unchanged automatic placement saving nothing, checked keys listed, the over-limit notice, saving none removing the setting, only true checkboxes counting, the settings page filter, the 60 s default, Codex's automatic order. The unchanged rules: the 80% colour, not connected being no failure, the backoff doubling, a forced read never cutting a rate limit, Grok's expiry check, agy's `remaining_fraction` inversion, the keychain account rule, Codex's weekly-by-length, Claude's model windows, credentials text kept out of the log |
 | M1 | README for AgentUsage: what it shows, where each number comes from on each platform, settings, the popup and the hover delay, the upstream MIT credit | built | every `agentUsage.*` key in the README exists in `package.json` and the reverse; the four command titles it names match `package.json` (the fifth, the click's, is hidden from the palette); the endpoints, the JSON-RPC method, agy's arguments and both credential names it quotes are found in `src/` |
-| V1 | Live on this Mac: package with `vsce`, install, all four agents read; the old extension removed only when AgentUsage is complete (D8) | 0.4.1 installed; reload and your look owed | `code --list-extensions` shows `kritblade.agent-usage@0.4.1`, the only AgentUsage identity installed. The open window keeps its earlier copy until it reloads. `tools/popup-check.js` passed against this source in an isolated VS Code. Owed after **Developer: Reload Window**: the status bar text, the icon in the Extensions view, the click popup and its four links closing it, the settings page's checkbox list, the checklist, and names off |
+| V1 | Live on this Mac: package with `vsce`, install, all four agents read; the old fork uninstalled (D8) | 0.4.1 installed; old fork uninstalled; reload and your look owed | `code --list-extensions` shows `kritblade.agent-usage@0.4.1`, the only AgentUsage identity installed, and no `claude-codex-usage-keychain`. The open window keeps its earlier copy until it reloads. `tools/popup-check.js` passed against this source in an isolated VS Code. Owed after **Developer: Reload Window**: the status bar text, the icon in the Extensions view, the click popup and its four links closing it, the settings page's checkbox list, the checklist, and names off |
 | V2 | Live on your Windows machine: install the same VSIX, Claude read from Credential Manager or the file, Grok from its file, Codex and `agy` run | owed | live |
 
 ---
@@ -430,7 +431,7 @@ The settings page lists them in this order (each setting's `order`):
 | `agentUsage.showLog` | AgentUsage: Show Log |
 
 **Identity**:
-- `kritblade.agent-usage` 0.4.1, with display name AgentUsage. The new identity installs beside the old extension (D8).
+- `kritblade.agent-usage` 0.4.1, with display name AgentUsage. It replaces the old fork, which is uninstalled (D8).
 - **Icon**: `images/agent-usage-icon.png` (256 px), drawn with `images/agent-usage-icon.svg` by
   `python3 tools/build-icon.py` (Pillow) from one geometry (D19). Each row is one agent's meter in status bar order, five
   segments each: Claude `#E07B53` (3 filled), Codex `#ECEEF2` (4), Grok `#A48BFA` (2), Antigravity `#4F8EF7` (3). No
