@@ -16,6 +16,7 @@ dots are chosen on the settings page; names can be hidden; reads run every minut
     Dots** is now one checklist that writes the same setting.
 - With `agentUsage.isAgentNameShown` off, each agent shows only its icon (D15).
 - Reads run every 60 s by default (D16). The popup is built from the last reading and never reads by itself.
+- Release VSIX files are kept in `dist/`, one per version, and pushed with the source.
 - Owed:
   - your look at 0.4.1 (V1);
   - P2's renewal half;
@@ -113,7 +114,7 @@ the last numbers and marks nothing in the status bar, because only an expired to
 | P2 | Trial: `grok agent stdio` with ACP `_x.ai/billing` (D9). The protocol and the answer, then, after the token expires at 02:33 UTC, whether one run renews it and `grok` still signs in afterwards | protocol done; renewal owed | the protocol, live 21:33: `initialize` 26 ms, `_x.ai/billing` 215 ms, 0.9 s in all, exited by itself; `auth.json` was untouched (its token still valid). The renewal needs three things: a new `expires_at` in `auth.json`; the billing endpoint answering with the new token; and a later `grok` session starting with no sign-in prompt. It is adopted only if all three hold. To rerun after 02:33 UTC: `node tools/cli-login-times.js grok`, `node tools/cli-rpc-probe.js grok`, `node tools/cli-login-times.js grok` |
 | S1 | Dev layout (§8): `src/index.js`, `src/vscode/`, `src/macos/`, `src/windows/`, `src/shared/`, `src/features/<feature>/`; plain CommonJS with no compiler boilerplate; `out/`, `FORK.md`, `changelog.md`, `l10n/` and `package.nls*.json` removed | built | `module-boundaries.test.js` (§11) passes; `grep -rn "__importStar\|sourceMappingURL" src/` finds nothing |
 | S2 | Logger: `src/shared/log.js` with mvu-helper's `createModuleLog` API, the `AgentUsage` output channel as its sink, `agentUsage.logVerbosity`; every `catch` logs (§9) | built | `log.test.js` (gating per level, source tags, sink swap); `module-boundaries.test.js`: `console.` only in `shared/log.js`, and every `catch` logs, answers a failure or is marked `EXPECTED:`; `shared.test.js`: unparseable credentials text never reaches the log |
-| S3 | Identity `kritblade.agent-usage` 0.4.1, display name AgentUsage, its own icon (D19), `main: ./src/index.js`, the commands and settings of §7 | built | `python3 tools/build-icon.py` wrote the SVG and the 256 px PNG from one geometry; Quick Look's render of the SVG matched the PNG. `vsce package` built `agent-usage-0.4.1.vsix` (36 files, 59.2 KB, no `plans/`, `tests/`, `tools/`, `.vscode-test/`, upstream's `icon.png` or the SVG); `code --list-extensions` shows `kritblade.agent-usage@0.4.1`; `settings.test.js`: the five commands match between `package.json` and `src/index.js`, and every declared setting is read |
+| S3 | Identity `kritblade.agent-usage` 0.4.1, display name AgentUsage, its own icon (D19), `main: ./src/index.js`, the commands and settings of §7 | built | `python3 tools/build-icon.py` wrote the SVG and the 256 px PNG from one geometry; Quick Look's render of the SVG matched the PNG. `vsce package` built `dist/agent-usage-0.4.1.vsix` (36 files, 59.2 KB, no `plans/`, `tests/`, `tools/`, `.vscode-test/`, upstream's `icon.png` or the SVG); `code --list-extensions` shows `kritblade.agent-usage@0.4.1`; `settings.test.js`: the five commands match between `package.json` and `src/index.js`, and every declared setting is read |
 | A1 | Claude reader: the env token, then the store Claude Code itself uses on the OS (D12, §1); `five_hour`, `seven_day`, `limits[]` | built; macOS verified live | `claude-usage-core.test.js` on the 2026-11-17 answer, the service name, the keychain account and the rollout check; live 21:51 through `tools/read-agent-usage.js` from the keychain: 5h 27%, Weekly 78%, Fable 2%, plan `max · default_claude_max_5x`, 390 ms. The Windows path waits on V2 |
 | A2 | Codex reader per D13: `codex -s read-only -a never app-server`, method `account/rateLimits/read`; windows classified by length only (D4) | built; verified live | `codex-usage-core.test.js` on the P1 answer (a weekly window in the primary slot, a window without a length dropped); live 21:51: 5h 11%, Weekly 40%, plan `plus`, 3 free resets, 608 ms; Codex exits by itself |
 | A3 | Grok reader: `auth.json` in `GROK_HOME` and the `billing?format=credits` endpoint (§1); the token is used only while unexpired and never renewed (D9) | built; verified live | `grok-usage-core.test.js` on the 2026-11-17 answer (an expired session is refused without a request; the product split becomes the breakdown); live 21:51: Weekly 16% (GrokChat 13%, GrokBuild 3%), 314 ms; the `grok agent stdio` trial is P2 |
@@ -437,17 +438,20 @@ The settings page lists them in this order (each setting's `order`):
 - `main: ./src/index.js`, activated on `onStartupFinished`, `engines.vscode ^1.85.0`.
 - Plain JavaScript (CommonJS) with no build step: `src/` ships as it is.
 - `npm test` runs `node --test "tests/*.test.js"`; Node expands the glob itself, so it works the same on Windows.
-- `npm run package` runs `npx --yes @vscode/vsce@3 package --allow-missing-repository`.
+- `npm run package` runs `npx --yes @vscode/vsce@3 package --allow-missing-repository --out dist/`, which writes
+  `dist/agent-usage-<version>.vsix`. `dist/` is tracked and keeps one VSIX per release; a build of an unchanged
+  `version` replaces that version's file.
 - `node tools/read-agent-usage.js` reads each agent once with the extension's readers, outside VS Code.
 - `node tools/mutation-check.js` runs §11's mutants; `node tools/popup-check.js` runs §4's live check.
-- `.vscodeignore` keeps `plans/`, `tests/`, `tools/`, `.context/`, `.github/`, `.vscode/`, `.vscode-test/`, built
-  VSIX files, upstream's `images/icon.png` and the icon's SVG source out of the VSIX.
+- `.vscodeignore` keeps `plans/`, `tests/`, `tools/`, `.context/`, `.github/`, `.vscode/`, `.vscode-test/`, `dist/`,
+  built VSIX files, upstream's `images/icon.png` and the icon's SVG source out of the VSIX.
 
 ## 8. Files
 
 ````
 AgentUsage/
 ├── plans/agent-usage.md
+├── dist/                           release VSIX files, one per version; tracked, never shipped
 ├── tests/                          node --test; never shipped
 ├── tools/                          never shipped
 │   ├── read-agent-usage.js         one read per agent with the extension's readers, outside VS Code

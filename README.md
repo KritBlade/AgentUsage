@@ -84,7 +84,8 @@ unofficial and can change without notice.
 - `node tools/mutation-check.js` breaks one rule at a time and reports any rule no test catches.
 - `node tools/popup-check.js` opens an isolated VS Code for about half a minute and checks the popup with real mouse
   clicks.
-- `npm run package` builds the VSIX.
+- `npm run package` builds `dist/agent-usage-<version>.vsix`. `dist/` keeps one VSIX per release, so raise `version`
+  in `package.json` first, or the build replaces that version's file.
 - The design and its tracking are in `plans/agent-usage.md`.
 
 AgentUsage is derived from `ypdev.claude-codex-usage` 0.2.2 (MIT, see `LICENSE.txt`).

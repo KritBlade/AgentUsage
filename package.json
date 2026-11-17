@@ -192,6 +192,6 @@
 	},
 	"scripts": {
 		"test": "node --test \"tests/*.test.js\"",
-		"package": "npx --yes @vscode/vsce@3 package --allow-missing-repository"
+		"package": "npx --yes @vscode/vsce@3 package --allow-missing-repository --out dist/"
 	}
 }

@@ -5,6 +5,7 @@ tools/**
 .github/**
 .vscode/**
 *.vsix
+dist/**
 .vscode-test/**
 images/icon.png
 images/*.svg

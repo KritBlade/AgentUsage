@@ -2,8 +2,8 @@
 .github/
 .context/
 
-# Built and generated output: VSIX files go to GitHub Releases, not the tree
-*.vsix
+# Built and generated output. Release VSIX files are kept in dist/ and tracked; one built at the root is not
+/*.vsix
 .vscode-test/
 __pycache__/
 node_modules/
