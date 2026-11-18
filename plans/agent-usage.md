@@ -462,7 +462,9 @@ AgentUsage/
 │   ├── popup-check.js              §4's live check: an isolated VS Code driven with real mouse events
 │   └── build-icon.py               draws images/agent-usage-icon.svg and .png from one geometry (§7)
 ├── images/                         agent-usage-icon.png (shipped), agent-usage-icon.svg, icon.png (upstream's, unshipped)
-├── package.json  README.md  LICENSE.txt (upstream MIT, kept)  .vscodeignore
+├── package.json  README.md  .vscodeignore
+├── LICENSE                         AGPL-3.0, the same text as mvu-helper's
+├── LICENSE-claude-codex-usage.txt  upstream ypdev.claude-codex-usage's MIT notice, which the MIT terms require to ship
 └── src/
     ├── index.js                    activate/deactivate: lists the agents, wires poller, display, settings, commands
     ├── vscode/                     the only folder that requires 'vscode'

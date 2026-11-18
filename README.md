@@ -88,4 +88,5 @@ unofficial and can change without notice.
   in `package.json` first, or the build replaces that version's file.
 - The design and its tracking are in `plans/agent-usage.md`.
 
-AgentUsage is derived from `ypdev.claude-codex-usage` 0.2.2 (MIT, see `LICENSE.txt`).
+AgentUsage is licensed under the GNU Affero General Public License v3.0 (see `LICENSE`). It is derived from
+`ypdev.claude-codex-usage` 0.2.2, whose MIT notice is kept in `LICENSE-claude-codex-usage.txt`.
