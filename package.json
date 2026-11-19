@@ -2,7 +2,7 @@
 	"name": "agent-usage",
 	"displayName": "AgentUsage",
 	"description": "Usage limits of the Claude Code, Codex, Grok and Antigravity CLIs as traffic-light dots in the status bar, with every agent's details in a popup.",
-	"version": "0.4.2",
+	"version": "0.4.3",
 	"publisher": "kritblade",
 	"license": "AGPL-3.0-or-later",
 	"icon": "images/agent-usage-icon.png",
@@ -169,14 +169,20 @@
 					"default": "codex",
 					"description": "Command run for Codex's usage (`<command> -s read-only -a never app-server`); a name on VS Code's PATH or a full path."
 				},
-				"agentUsage.antigravityCommand": {
+				"agentUsage.grokCommand": {
 					"order": 7,
+					"type": "string",
+					"default": "grok",
+					"description": "Command started when Grok's stored token has expired (`<command> agent stdio`), so grok renews the token itself; a name on VS Code's PATH or a full path."
+				},
+				"agentUsage.antigravityCommand": {
+					"order": 8,
 					"type": "string",
 					"default": "agy",
 					"description": "Command run for Antigravity's usage (`<command> -p /quota`); a name on VS Code's PATH or a full path."
 				},
 				"agentUsage.logVerbosity": {
-					"order": 8,
+					"order": 9,
 					"type": "string",
 					"enum": [
 						"off",

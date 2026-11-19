@@ -15,6 +15,7 @@ const CHOICE = 'src/features/usage-display/dot-choice.js';
 const SETTINGS = 'src/vscode/settings.js';
 const POLLING = 'src/features/usage-polling/usage-polling-core.js';
 const CLAUDE = 'src/features/claude-usage/claude-usage-core.js';
+const GROK = 'src/features/grok-usage/grok-usage-core.js';
 
 /** [what the mutant breaks, file, text to replace, replacement] */
 const MUTANTS = [
@@ -44,6 +45,9 @@ const MUTANTS = [
     ['closing the popup drops the entry', 'src/vscode/status-bar.js', '            item.hide();\n            item.show();', '            item.show();'],
     ['backoff doubling', POLLING, 'previous.failMs * 2', 'previous.failMs * 3'],
     ['a forced read never cuts a rate limit', POLLING, 'return isForced && !isRateLimited;', 'return isForced;'],
+    ["grok's own updater off for grok agent stdio", GROK, "[AUTO_UPDATER_OFF_VARIABLE]: '1'", "[AUTO_UPDATER_OFF_VARIABLE]: '0'"],
+    ["Grok: a missing percentage reads as 0%", GROK, 'return limit > 0 ? Math.min(100, (used / limit) * 100) : 0;', 'return limit > 0 ? Math.min(100, (used / limit) * 100) : undefined;'],
+    ['Grok: the wait after a failed renewal', GROK, 'return nowMs - failedRenewal.attemptedAtMs >= RENEWAL_RETRY_MS;', 'return true;'],
     ["Grok's expiry check (D9)", 'src/features/grok-usage/grok-usage-core.js', 'session.expiresAt.getTime() <= now.getTime()', 'session.expiresAt.getTime() < now.getTime() - 86400000'],
     ["agy's remaining_fraction inversion", 'src/features/antigravity-usage/antigravity-usage-core.js', 'toUsedPercent((1 - remaining) * 100)', 'toUsedPercent(remaining * 100)'],
     ["agy's auto-update off for the quota read", 'src/features/antigravity-usage/antigravity-usage-core.js', "[AUTO_UPDATE_OFF_VARIABLE]: 'true'", "[AUTO_UPDATE_OFF_VARIABLE]: 'false'"],

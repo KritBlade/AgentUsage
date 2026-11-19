@@ -2,7 +2,8 @@
 /**
  * Reads each agent once with the extension's own readers, outside VS Code, and prints what the hover would list.
  * Usage: node tools/read-agent-usage.js [--verbose] [claude] [codex] [grok] [antigravity]
- * No token is printed. Codex and Antigravity are read through their own CLIs (`codex`, `agy` on PATH).
+ * No token is printed. Codex and Antigravity are read through their own CLIs (`codex`, `agy` on PATH); Grok starts
+ * `grok agent stdio` only when its stored token has expired, so grok renews it.
  */
 const os = require('node:os');
 const { setLogVerbosity } = require('../src/shared/log.js');
@@ -24,7 +25,14 @@ async function main() {
     setLogVerbosity(args.includes('--verbose') ? 'verbose' : 'off');
     const wanted = args.filter((arg) => !arg.startsWith('--'));
     const agents = wanted.length > 0 ? AGENTS.filter((agent) => wanted.includes(agent.id)) : AGENTS;
-    const environment = { homedir: os.homedir(), env: process.env, platform: process.platform, codexCommand: 'codex', antigravityCommand: 'agy' };
+    const environment = {
+        homedir: os.homedir(),
+        env: process.env,
+        platform: process.platform,
+        codexCommand: 'codex',
+        grokCommand: 'grok',
+        antigravityCommand: 'agy',
+    };
     for (const agent of agents) {
         const startedAt = Date.now();
         const result = await agent.readUsage(environment);

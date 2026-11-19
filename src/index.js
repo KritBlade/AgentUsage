@@ -23,7 +23,7 @@ const COMMAND_IDS = Object.freeze({
     chooseStatusBarDots: 'agentUsage.chooseStatusBarDots',
     showLog: 'agentUsage.showLog',
 });
-const POLLING_SETTINGS = Object.freeze(['agents', 'refreshIntervalSeconds', 'codexCommand', 'antigravityCommand']);
+const POLLING_SETTINGS = Object.freeze(['agents', 'refreshIntervalSeconds', 'codexCommand', 'grokCommand', 'antigravityCommand']);
 
 function placeCurrentDots(states, settings) {
     return placeDots({ states, checkedKeys: settings.checkedDotKeys, maxDots: settings.maxStatusBarDots });
@@ -45,6 +45,7 @@ function activate(context) {
                 env: process.env,
                 platform: process.platform,
                 codexCommand: settings.codexCommand,
+                grokCommand: settings.grokCommand,
                 antigravityCommand: settings.antigravityCommand,
             };
         },
