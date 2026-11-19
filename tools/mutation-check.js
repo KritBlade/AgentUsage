@@ -38,6 +38,7 @@ const MUTANTS = [
     ['settings: only true checkboxes count', SETTINGS, '.filter((key) => statusBarDots[key] === true)', ''],
     ['settings: the page filter', SETTINGS, '`@ext:${extensionId}`', 'extensionId'],
     ['package.json: reads every 60 s (D16)', 'package.json', '"default": 60,', '"default": 300,'],
+    ['package.json: the dot setting points to Status bar dots (D21)', 'package.json', 'then click Status bar dots in the popup', 'then click Settings in the popup'],
     ['Codex automatic order', 'src/features/codex-usage/index.js', "['session', 'weekly']", "['weekly', 'session']"],
     ['the click opens the popup (D17)', 'src/index.js', 'createStatusBar({ commandId: COMMAND_IDS.showUsagePopup,', 'createStatusBar({ commandId: COMMAND_IDS.refresh,'],
     ['the popup command hidden from the palette', 'package.json', '"when": "false"', '"when": "true"'],

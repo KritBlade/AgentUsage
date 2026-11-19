@@ -1,27 +1,23 @@
 # AgentUsage — one status bar item for the usage limits of every coding-agent CLI
 
-**v0.11 — grok renews its own expired token for Grok's read; a new period with nothing used reads 0%.**
-- Once Grok's stored token has expired, the Grok reader starts `grok agent stdio` hidden and sends ACP `initialize`.
-  grok renews the token itself, under its own `auth.json` lock, and writes it back; the reader then reads billing over
-  HTTP as before (D9, A3). AgentUsage still never renews or writes a Grok token. The popup says to run `grok` only when
-  grok cannot renew, and grok is then not started again for that token for 15 minutes.
-- `grok agent stdio` runs with `GROK_DISABLE_AUTOUPDATER=1`, so grok's own updater, which attached a console window in
-  P2's run, stays off.
-- A billing answer without `creditUsagePercent` reads as 0%, as grok's own CLI reads it: the answer leaves the
-  percentage out while a new period has nothing used (§1).
-- New setting `agentUsage.grokCommand` (default `grok`), like the Codex and Antigravity commands (§7).
-- Codex's and Grok's stdio JSON-RPC client is one module, `src/shared/json-rpc-process.js` (§8).
-- Shipped as 0.4.3 and installed on your Windows machine; each open VS Code window runs it after a reload.
+**v0.12 — the dots are chosen only in the Status bar dots checklist, which lists new windows by itself.**
+- The settings page no longer shows one checkbox per window for `agentUsage.statusBarDots` (D21). VS Code draws
+  checkboxes only for windows declared in `package.json`, so every new window, such as Gemini 4 Argon Weekly, needed a
+  release. The setting now shows the instruction "click AgentUsage's item in the status bar, then click Status bar dots
+  in the popup" and VS Code's **Edit in settings.json** link (§5, §7).
+- The **Status bar dots** checklist lists every window with a reading, so a new window can be checked as soon as an
+  agent reports it. It saves into the same setting; existing choices carry over unchanged.
+- Every other setting is as it was.
+- Shipped as 0.4.4 and installed on your Mac; each open VS Code window runs it after **Developer: Reload Window**.
 - Owed:
   - your check that `grok` starts with no sign-in prompt after P2's renewal (P2);
-  - the first renewal inside VS Code, once the token expires at 16:17 UTC on 2026-11-19 (A3);
   - your look at 0.4.1 (V1);
   - the rest of the Windows run (V2), including a 30-minute process watch after the reload.
 - The old fork is uninstalled: AgentUsage has all its features (D8).
 
 AgentUsage shows how much of each coding agent's usage limits is spent: Claude Code, Codex, Grok and Antigravity
-(`agy`). One status bar item carries at most four traffic-light dots. Until the user checks dots on AgentUsage's
-settings page, they are placed automatically and shared fairly between the connected agents:
+(`agy`). One status bar item carries at most four traffic-light dots. Until the user checks dots in the popup's
+**Status bar dots** checklist, they are placed automatically and shared fairly between the connected agents:
 - With one agent, that agent shows its windows (Claude: 5h, Weekly, Fable).
 - With two agents, each gets two dots.
 - With four agents, each gets one.
@@ -82,9 +78,9 @@ the last numbers and marks nothing in the status bar, because only an expired to
     Credential Manager holds nothing. Without them: the file.
   - What was measured is in §1.
 - **D13 — Codex is read through `codex app-server` on every platform; AgentUsage handles no Codex token** (2026-11-17).
-- **D14 — the hover links to AgentUsage's settings page, where the dots are chosen** (2026-11-17): "we need to add
-  setting in the popup screen. so that we can change which dot to show", then "add a setting link in the popup screen
-  so that it will bring us to a setting page".
+- **D14 — the hover links to AgentUsage's settings page** (2026-11-17): "we need to add setting in the popup screen. so
+  that we can change which dot to show", then "add a setting link in the popup screen so that it will bring us to a
+  setting page". The dots themselves are chosen in the checklist (D21).
 - **D15 — an option hides the agents' names** (2026-11-17): "need option to hide agent name "Claude", "Codex"...etc so
   that the bar is not as long".
 - **D16 — the hover shows kept readings, refreshed every minute** (2026-11-17): "I believe it try to get the realtime
@@ -100,9 +96,14 @@ the last numbers and marks nothing in the status bar, because only an expired to
 - **D20 — with names hidden, model names inside a window's label become icons too** (2026-11-19): "the gemini doesn't
   have an icon...so i disable showing the agent name still showing now". VS Code's brand codicons stand in:
   `$(google-gemini)` for Gemini, `$(claude)$(openai)` for Claude and GPT (§3).
+- **D21 — the dots are chosen only in the Status bar dots checklist; the settings page has no dot checkboxes**
+  (2026-11-19): "remove the setting page checkbox, but all other setting leave it as is. And in the orignal section of
+  choosing dots, add a comment saying choosing the dot by clicking on the extension in the status bar and click on
+  "Status Bar Dots"". Why: VS Code draws settings checkboxes only for declared windows, so each new window needed a
+  release; the checklist is built from the readings (§5).
 
-**Decisions owed:** whether Gemini 4 Argon Weekly (`antigravity/gemini-argon-wtu-weekly`) gets a checkbox and a place
-in Antigravity's automatic order. D11 names four Antigravity dots; today the window shows only in the popup.
+**Decisions owed:** none. Gemini 4 Argon Weekly can be checked in the checklist (D21); it has no place in
+Antigravity's automatic order, which D11 keeps at four dots.
 
 ---
 
@@ -115,20 +116,20 @@ in Antigravity's automatic order. D11 names four Antigravity dots; today the win
 | P2 | Trial: `grok agent stdio` with ACP `_x.ai/billing` (D9). The protocol and the answer, then, after the token expires at 02:33 UTC, whether one run renews it and `grok` still signs in afterwards | done; adopted (D9, A3); your `grok` sign-in check owed | the protocol, live 2026-11-17 21:33 on the Mac: `initialize` 26 ms, `_x.ai/billing` 215 ms, 0.9 s in all, exited by itself; `auth.json` was untouched (its token still valid). The renewal needs three things: a new `expires_at` in `auth.json`; the billing endpoint answering with the new token; and a later `grok` session starting with no sign-in prompt. The first two hold, and you adopted it before the third was checked. Live 2026-11-19 10:17 on Windows, grok 1.0.77, the token expired since 2026-11-11: `initialize` answered in 811 ms, and grok rewrote `auth.json` at 10:17:19 with `expires_at` 16:17:19; `_x.ai/billing` answered in 154 ms; the REST billing endpoint answered with the new token; 1.3 s in all, exited by itself. Owed: you start `grok` and it asks for no sign-in. The run also started grok's own updater (§1). Rerun with `node tools/cli-login-times.js grok`, `node tools/cli-rpc-probe.js grok`, `node tools/cli-login-times.js grok` |
 | S1 | Dev layout (§8): `src/index.js`, `src/vscode/`, `src/macos/`, `src/windows/`, `src/shared/`, `src/features/<feature>/`; plain CommonJS with no compiler boilerplate; `out/`, `FORK.md`, `changelog.md`, `l10n/` and `package.nls*.json` removed | built | `module-boundaries.test.js` (§11) passes; `grep -rn "__importStar\|sourceMappingURL" src/` finds nothing |
 | S2 | Logger: `src/shared/log.js` with mvu-helper's `createModuleLog` API, the `AgentUsage` output channel as its sink, `agentUsage.logVerbosity`; every `catch` logs (§9) | built | `log.test.js` (gating per level, source tags, sink swap); `module-boundaries.test.js`: `console.` only in `shared/log.js`, and every `catch` logs, answers a failure or is marked `EXPECTED:`; `shared.test.js`: unparseable credentials text never reaches the log |
-| S3 | Identity `kritblade.agent-usage` 0.4.3, display name AgentUsage, its own icon (D19), `main: ./src/index.js`, the commands and settings of §7 | built | `python3 tools/build-icon.py` wrote the SVG and the 256 px PNG from one geometry; Quick Look's render of the SVG matched the PNG. `vsce package` built `dist/agent-usage-0.4.3.vsix` on Windows (38 files, 75.6 KB, no `plans/`, `tests/`, `tools/`, `.vscode-test/`, upstream's `icon.png` or the SVG); `settings.test.js`: the five commands match between `package.json` and `src/index.js`, and every declared setting is read |
+| S3 | Identity `kritblade.agent-usage` 0.4.4, display name AgentUsage, its own icon (D19), `main: ./src/index.js`, the commands and settings of §7 | built | `python3 tools/build-icon.py` wrote the SVG and the 256 px PNG from one geometry; Quick Look's render of the SVG matched the PNG. `vsce package` built `dist/agent-usage-0.4.4.vsix` on the Mac (38 files, 75.1 KB, no `plans/`, `tests/`, `tools/`, `.vscode-test/`, upstream's `icon.png` or the SVG); `settings.test.js`: the five commands match between `package.json` and `src/index.js`, and every declared setting is read |
 | A1 | Claude reader: the env token, then the store Claude Code itself uses on the OS (D12, §1); `five_hour`, `seven_day`, `limits[]` | built; macOS verified live | `claude-usage-core.test.js` on the 2026-11-17 answer, the service name, the keychain account and the rollout check; live 21:51 through `tools/read-agent-usage.js` from the keychain: 5h 27%, Weekly 78%, Fable 2%, plan `max · default_claude_max_5x`, 390 ms. The Windows path waits on V2 |
 | A2 | Codex reader per D13: `codex -s read-only -a never app-server`, method `account/rateLimits/read`; windows classified by length only (D4) | built; verified live | `codex-usage-core.test.js` on the P1 answer (a weekly window in the primary slot, a window without a length dropped); live 21:51: 5h 11%, Weekly 40%, plan `plus`, 3 free resets, 608 ms; Codex exits by itself |
-| A3 | Grok reader: `auth.json` in `GROK_HOME` and the `billing?format=credits` endpoint (§1). Once the token has expired, `grok agent stdio` (`agentUsage.grokCommand`) with `GROK_DISABLE_AUTOUPDATER=1` is sent ACP `initialize`, so grok renews the token itself, and the file is read again; a token grok could not renew waits 15 minutes before grok is started for it again. AgentUsage never renews or writes the token (D9) | built; verified live; the first renewal inside VS Code owed | `grok-usage-core.test.js` on the 2026-11-17 and 2026-11-19 answers (the product split becomes the breakdown; a missing percentage reads 0%), the agent's environment, and the wait after a failed renewal. Live 2026-11-17 21:51 on the Mac: Weekly 16% (GrokChat 13%, GrokBuild 3%), 314 ms. Live 2026-11-19 10:25 on Windows: with the token grok renewed in P2, Weekly 0% in 300 ms; against a throwaway `GROK_HOME` holding an expired session with a fake refresh token, token expired in 1.6 s, a second read at once started no grok, grok started no updater and no `OpenConsole.exe`, and the real `auth.json` was untouched. Grok's renewal itself is P2. Owed: the first renewal inside VS Code after the token expires at 16:17 UTC; with `agentUsage.logVerbosity` at `verbose` the log reads "grok renewed its token" |
+| A3 | Grok reader: `auth.json` in `GROK_HOME` and the `billing?format=credits` endpoint (§1). Once the token has expired, `grok agent stdio` (`agentUsage.grokCommand`) with `GROK_DISABLE_AUTOUPDATER=1` is sent ACP `initialize`, so grok renews the token itself, and the file is read again; a token grok could not renew waits 15 minutes before grok is started for it again. AgentUsage never renews or writes the token (D9) | built; verified live, the renewal inside VS Code on the Mac | `grok-usage-core.test.js` on the 2026-11-17 and 2026-11-19 answers (the product split becomes the breakdown; a missing percentage reads 0%), the agent's environment, and the wait after a failed renewal. Live 2026-11-17 21:51 on the Mac: Weekly 16% (GrokChat 13%, GrokBuild 3%), 314 ms. Live 2026-11-19 10:25 on Windows: with the token grok renewed in P2, Weekly 0% in 300 ms; against a throwaway `GROK_HOME` holding an expired session with a fake refresh token, token expired in 1.6 s, a second read at once started no grok, grok started no updater and no `OpenConsole.exe`, and the real `auth.json` was untouched. Grok's renewal itself is P2. Live 2026-11-19 11:18 on the Mac, VS Code 0.4.3 with grok 1.0.88 and the token expired: AgentUsage activated at 11:18:27.6; grok's own log (`~/.grok/logs/unified.jsonl`) shows ACP `initialize` running `oidc try_refresh_pure succeeded` and `auth update disk written` at 11:18:28.36, and `auth.json` then expired at 17:18:28; `node tools/read-agent-usage.js grok` read Weekly 0% in 253 ms. At 11:15, before that restart, the popup read `TypeError: The "file" argument must be of type string. Received undefined`: grok was started with no command, because `agentUsage.grokCommand` had no value. The likely cause, not reproduced: 0.4.3's code ran before VS Code had loaded 0.4.3's setting declarations, so neither the setting nor its declared default existed; the full restart cleared it |
 | A4 | Antigravity reader: `agy -p /quota --output-format json --log-file <null device>` with `AGY_CLI_DISABLE_AUTO_UPDATE=true` (§1) | built; verified live | `antigravity-usage-core.test.js` on the 2026-11-17 output, and the variable set with every other one kept; live 2026-11-17 21:51 on the Mac: Gemini 5h 8%, Gemini Weekly 2%, Claude and GPT 5h 0%, Claude and GPT Weekly 0%, 3.2 s; the agy log folder held 5 files before and after. Live 2026-11-19 09:37 on Windows, `node tools/read-agent-usage.js antigravity` with agy's update check due: read Gemini Weekly 2% and Claude and GPT Weekly 0% in 3.2 s (the stale sign-in's answer, §1) and started no `agy --bg-updater`, while VS Code's 0.4.1 started one, its `agy --version` and an `OpenConsole.exe` 2.5 s later. After signing in again, 09:53: five windows, Gemini 5h, Gemini Weekly, Claude and GPT 5h, Claude and GPT Weekly and Gemini 4 Argon Weekly, all 0%, 3.3 s |
 | H1 | Windows Credential Manager read (`src/windows/credential-manager.js`): PowerShell calling `CredReadW` for `Claude Code-credentials/claude-code-user`, decoded as UTF-8, with the `#0…#n` / `#m` chunks joined (D12) | built; unverified | `claude-usage-core.test.js`: the chunk joining, the target name and the rollout check; the PowerShell side waits on V2 (`cmdkey /list` shows the entry, and Claude's dots on Windows match `/usage` in `claude`) |
 | U1 | Window model: every reader answers `{ windows[], plan?, notes?, fetchedAt }` (§2) | built | the four core tests check each window's `id` and `label` against the §2 table |
 | U2 | Polling: a read per agent every 60 s by default (D16), §6's backoff, one read per agent at a time, a re-read after a reset passes, and a redraw as each agent lands (§6) | built | `usage-polling-core.test.js` (both backoff sequences, a longer retry-after, a forced read never cutting a rate-limit wait, a reset passed only after the reading and the 60 s guard); `settings.test.js` reads the 60 s default with no warning; V1 owes the look at Claude and Grok drawing before agy |
 | U3 | Status bar: at most `agentUsage.maxStatusBarDots` dots, either the checked ones or, with none checked, automatic placement (§3); the names left out with `agentUsage.isAgentNameShown` off (D15), and then each window's compact label in place of its model names (D20); `$(warning)` beside an agent whose last read failed | built | `usage-display-core.test.js`, with the real agent descriptors: every row of §3's automatic table, limits of 1 and 8, a window outside the order, §3's checked example, the limit cutting checked dots, a checked window without a reading, names hidden, compact labels only with names hidden, a failed agent, nothing connected; `antigravity-usage-core.test.js`: each group's compact label, and none for a group without an icon. Live 2026-11-19 on Windows, agy's reading with names off and two dots: `$(rocket) 🟢 $(google-gemini) 5h 0% · 🟢 $(google-gemini) Weekly 0%`. Owed: the look of the icons in the status bar after the reload (V2) |
-| U4 | Choosing dots: the checkbox setting `agentUsage.statusBarDots` on the settings page (D14), and AgentUsage: Choose Status Bar Dots as one checklist that writes it (§5) | built | `settings.test.js`: checked boxes read as keys; saving none removes the setting; the ten checkboxes are exactly the agents' automatic-order windows, with `additionalProperties: false`. VS Code 1.146's settings page draws such an object as a checkbox list, one row per declared property. `dot-choice.test.js`: the bar's dots come checked; a change is saved; unchanged automatic placement saves nothing; none checked saves none; a checked window without a reading is kept; Escape; more than the limit, with its notice; the notice with no reading. V1 owes: the Settings link opens the page, and checking three boxes shows exactly those three |
-| U5 | Popup: one table per agent with a reading or a failed read, the Not connected and Reading lines, four links: Refresh, Settings, Status bar dots, Log (§4); built at each redraw, never on opening (D16); opened at once by a click (D17); closed by any of its links (D18) | built; verified live | `usage-display-core.test.js` checks the markdown (tables, the empty Resets cell, the breakdown, notes, each failure line, the four links in order); `extension-activation.test.js`: the click command is `agentUsage.showUsagePopup` (hidden from the Command Palette) and runs `workbench.action.showHover`; each of the four links hides and shows the item before it acts. `node tools/popup-check.js`, live in an isolated VS Code 1.146 with real mouse events: the click opened it in 23–50 ms against 1528–1539 ms for a resting mouse; a click elsewhere closed it; its Settings link closed it and opened the page filtered to `@ext:kritblade.agent-usage` with ten checkboxes; the item kept its neighbours (`status.notifications`, `chat.statusBarEntry`). V1 owes your look |
-| T1 | Tests run with `npm test` (`node --test "tests/*.test.js"`); no `vscode` needed | built | 89 pass on Windows. Expected paths are built with `path.join`, so they hold on both OSes. `node tools/mutation-check.js` breaks 36 rules one at a time, and each one fails a test: 36 of 36 caught on Windows. A mutant's line breaks follow the file's, so the mutants that span lines apply to Windows' CRLF checkout too. The rules: the click opening the popup, its command hidden from the palette, a popup link closing the popup, closing dropping the entry, the checked filter, the checked limit, the checked-or-automatic switch, the fair share, names hidden, compact labels with names hidden, agy's compact labels, the separator between agents, the Settings link, the No reading now group, unchanged automatic placement saving nothing, checked keys listed, the over-limit notice, saving none removing the setting, only true checkboxes counting, the settings page filter, the 60 s default, Codex's automatic order, the 80% colour, not connected being no failure, the backoff doubling, a forced read never cutting a rate limit, grok's own updater off for `grok agent stdio`, Grok's missing percentage reading 0%, the wait after a failed Grok renewal, Grok's expiry check, agy's `remaining_fraction` inversion, agy's auto-update off for the quota read, the keychain account rule, Codex's weekly-by-length, Claude's model windows, credentials text kept out of the log |
+| U4 | Choosing dots: AgentUsage: Choose Status Bar Dots, opened by the popup's **Status bar dots** link, as one checklist of every window with a reading that writes `agentUsage.statusBarDots` (D21, §5). The setting declares no window: one `patternProperties` entry, `^(claude\|codex\|grok\|antigravity)/.+$` to a boolean, and no `additionalProperties`, so the settings page shows its instruction and **Edit in settings.json** | built; verified live on the Mac | `settings.test.js`: checked keys read as keys; saving none removes the setting; the setting declares no properties and no `additionalProperties`, every automatic-order window and `antigravity/gemini-argon-wtu-weekly` match its key pattern, and its description names the popup's link label. In VS Code's source (1.131 and 1.147), an object setting gets checkboxes only from declared boolean `properties` with no `additionalProperties` (`preferencesModels.ts`), and a `patternProperties` object without `additionalProperties` or a `.*` pattern is drawn as **Edit in settings.json** (`getObjectSettingSchemaType`). `dot-choice.test.js`: the bar's dots come checked; a change is saved; unchanged automatic placement saves nothing; none checked saves none; a checked window without a reading is kept; Escape; more than the limit, with its notice; the notice with no reading. `node tools/popup-check.js` on the Mac, VS Code 1.147: the settings page shows 0 dot checkboxes, the instruction, and **Edit in settings.json** |
+| U5 | Popup: one table per agent with a reading or a failed read, the Not connected and Reading lines, four links: Refresh, Settings, Status bar dots, Log (§4); built at each redraw, never on opening (D16); opened at once by a click (D17); closed by any of its links (D18) | built; verified live | `usage-display-core.test.js` checks the markdown (tables, the empty Resets cell, the breakdown, notes, each failure line, the four links in order); `extension-activation.test.js`: the click command is `agentUsage.showUsagePopup` (hidden from the Command Palette) and runs `workbench.action.showHover`; each of the four links hides and shows the item before it acts. `node tools/popup-check.js`, live in an isolated VS Code 1.146 with real mouse events: the click opened it in 23–50 ms against 1528–1539 ms for a resting mouse; a click elsewhere closed it; its Settings link closed it and opened the page filtered to `@ext:kritblade.agent-usage`; the item kept its neighbours (`status.notifications`, `chat.statusBarEntry`). V1 owes your look |
+| T1 | Tests run with `npm test` (`node --test "tests/*.test.js"`); no `vscode` needed | built | 89 pass on Windows and on the Mac. Expected paths are built with `path.join`, so they hold on both OSes. `node tools/mutation-check.js` breaks 37 rules one at a time, and each one fails a test: 37 of 37 caught on Windows and on the Mac. A mutant's line breaks follow the file's, so the mutants that span lines apply to Windows' CRLF checkout too. The rules: the click opening the popup, its command hidden from the palette, a popup link closing the popup, closing dropping the entry, the checked filter, the checked limit, the checked-or-automatic switch, the fair share, names hidden, compact labels with names hidden, agy's compact labels, the separator between agents, the Settings link, the No reading now group, unchanged automatic placement saving nothing, checked keys listed, the over-limit notice, saving none removing the setting, only true checkboxes counting, the settings page filter, the 60 s default, the dot setting pointing to Status bar dots, Codex's automatic order, the 80% colour, not connected being no failure, the backoff doubling, a forced read never cutting a rate limit, grok's own updater off for `grok agent stdio`, Grok's missing percentage reading 0%, the wait after a failed Grok renewal, Grok's expiry check, agy's `remaining_fraction` inversion, agy's auto-update off for the quota read, the keychain account rule, Codex's weekly-by-length, Claude's model windows, credentials text kept out of the log |
 | M1 | README for AgentUsage: what it shows, where each number comes from on each platform, settings, the popup and the hover delay, the upstream MIT credit | built | every `agentUsage.*` key in the README exists in `package.json` and the reverse; the four command titles it names match `package.json` (the fifth, the click's, is hidden from the palette); the endpoints, the JSON-RPC method, agy's arguments and both credential names it quotes are found in `src/` |
-| V1 | Live on this Mac: package with `vsce`, install, all four agents read; the old fork uninstalled (D8) | 0.4.1 installed; old fork uninstalled; reload and your look owed | `code --list-extensions` shows `kritblade.agent-usage@0.4.1`, the only AgentUsage identity installed, and no `claude-codex-usage-keychain`. The open window keeps its earlier copy until it reloads. `tools/popup-check.js` passed against this source in an isolated VS Code. Owed after **Developer: Reload Window**: the status bar text, the icon in the Extensions view, the click popup and its four links closing it, the settings page's checkbox list, the checklist, and names off |
+| V1 | Live on this Mac: package with `vsce`, install, all four agents read; the old fork uninstalled (D8) | 0.4.1 installed; old fork uninstalled; reload and your look owed | `code --list-extensions` shows `kritblade.agent-usage@0.4.1`, the only AgentUsage identity installed, and no `claude-codex-usage-keychain`. The open window keeps its earlier copy until it reloads. `tools/popup-check.js` passed against this source in an isolated VS Code. Owed after **Developer: Reload Window**: the status bar text, the icon in the Extensions view, the click popup and its four links closing it, the checklist, and names off |
 | V2 | Live on your Windows machine: install the same VSIX, Claude read from Credential Manager or the file, Grok from its file, Codex and `agy` run | 0.4.2 installed; agy's read verified; the rest owed | `code --list-extensions` shows `kritblade.agent-usage@0.4.2`; agy's read is in A4. Owed after **Developer: Reload Window** in every VS Code window: Claude, Grok and Codex in the status bar, and a 30-minute watch of process creation (`Win32_Process` creation events) with no `agy --bg-updater`, `agy --version` or `OpenConsole.exe -Embedding` |
 
 ---
@@ -394,17 +395,14 @@ Updated 20:31 · 2m ago
   driven with real mouse events through its DevTools port:
   - a click opened the popup in 23–50 ms; resting the mouse opened it in about 1540 ms;
   - a click elsewhere closed it;
-  - the Settings link closed it and opened the settings page filtered to `@ext:kritblade.agent-usage`, with the ten
-    checkboxes;
+  - the Settings link closed it and opened the settings page filtered to `@ext:kritblade.agent-usage`, where the dot
+    setting shows no checkboxes, its instruction and **Edit in settings.json** (VS Code 1.147 on the Mac, D21);
   - the item kept its neighbours on both sides.
 
 ## 5. Choosing the dots
 
-The choice lives in `agentUsage.statusBarDots`, in the user settings, and two places write it:
-- **The settings page** (D14): the popup's **Settings** link, or **AgentUsage: Open Settings**.
-  - `agentUsage.statusBarDots` shows one checkbox for each of the ten windows in §2's table, named
-    `<agent>/<window id>`.
-  - Hovering a name gives its window, e.g. "Claude Code: 5h (the current session)".
+The choice lives in `agentUsage.statusBarDots`, in the user settings, as `"<agent>/<window id>": true`. One place
+writes it (D21):
 - **AgentUsage: Choose Status Bar Dots**: the popup's **Status bar dots** link.
   - One checklist of every window that has a reading, grouped by agent: `<dot> <label> — <percent> · resets in
     <time>`.
@@ -419,8 +417,11 @@ How the choice applies:
 - **More checked than `agentUsage.maxStatusBarDots`**: the first ones in status bar order show. The checklist says so
   when it saves.
 - **A checked window whose reading is missing** is skipped and stays checked, so it returns with its agent.
-- **A window outside the ten**, such as a new Claude model, can be checked from the checklist. settings.json then
-  marks its key as not allowed, and the dot shows anyway.
+- **A new window**, such as Gemini 4 Argon Weekly or a new Claude model, appears in the checklist as soon as its agent
+  reports it, with no release. The setting accepts any `<agent>/<window id>` key of the four agents.
+- **The settings page** shows no checkbox per window, because VS Code draws checkboxes only for windows declared in
+  `package.json`. It shows the setting's instruction, "click AgentUsage's item in the status bar, then click Status bar
+  dots in the popup", and **Edit in settings.json**.
 
 ## 6. Polling
 
@@ -448,7 +449,7 @@ The settings page lists them in this order (each setting's `order`):
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `agentUsage.statusBarDots` | `{}`, none checked | the dots to show, one checkbox per window; none checked is automatic placement (§3, §5) |
+| `agentUsage.statusBarDots` | `{}`, none checked | the dots to show, chosen in the **Status bar dots** checklist and shown on the settings page as an instruction and **Edit in settings.json**; none checked is automatic placement (§3, §5, D21) |
 | `agentUsage.maxStatusBarDots` | `4` (1–8) | most dots the status bar shows |
 | `agentUsage.isAgentNameShown` | `true` | each agent's name beside its icon on the status bar; off leaves the icons only (D15) |
 | `agentUsage.agents` | `["claude", "codex", "grok", "antigravity"]` | agents to read, in status bar order; the first one takes the dots left over in automatic placement |
@@ -467,7 +468,7 @@ The settings page lists them in this order (each setting's `order`):
 | `agentUsage.showLog` | AgentUsage: Show Log |
 
 **Identity**:
-- `kritblade.agent-usage` 0.4.3, with display name AgentUsage. It replaces the old fork, which is uninstalled (D8).
+- `kritblade.agent-usage` 0.4.4, with display name AgentUsage. It replaces the old fork, which is uninstalled (D8).
 - **Icon**: `images/agent-usage-icon.png` (256 px), drawn with `images/agent-usage-icon.svg` by
   `python3 tools/build-icon.py` (Pillow) from one geometry (D19). Each row is one agent's meter in status bar order, five
   segments each: Claude `#E07B53` (3 filled), Codex `#ECEEF2` (4), Grok `#A48BFA` (2), Antigravity `#4F8EF7` (3). No
@@ -532,7 +533,8 @@ AgentUsage/
 **Agents plug in, nothing imports them.** Each agent's barrel exports one descriptor:
 `{ id, displayName, statusBarName, icon, cliCommand, automaticDotOrder, readUsage(environment) }`. `src/index.js` lists
 the four descriptors and hands them to polling and display, which never import an agent feature (P5). Adding a fifth
-agent takes one new feature folder, one line in `index.js`, and its windows' checkboxes in `package.json`.
+agent takes one new feature folder, one line in `index.js`, and its id in `package.json`'s `agentUsage.agents` and in
+`agentUsage.statusBarDots`' key pattern.
 
 **`shared/` is earned** (P3):
 - `usage-window.js` serves all six features.
@@ -639,7 +641,8 @@ All run under `npm test` (`node --test "tests/*.test.js"`), with no `vscode`.
   - checked dots read as their keys; a wrong value falls back to its default with a warning;
   - saving dots writes the checked keys, and saving none removes the setting; the settings page opens filtered to
     the extension;
-  - the ten checkboxes are exactly the agents' automatic-order windows; the five commands match between
+  - the dot setting declares no window and no `additionalProperties`, every agent's window key matches its key
+    pattern, and its description names the popup's **Status bar dots** link (D21); the five commands match between
     `package.json` and `src/index.js`.
 - `extension-activation.test.js`: `src/index.js` activated against a stand-in for `vscode` and four agents that read
   nothing:
@@ -655,7 +658,7 @@ All run under `npm test` (`node --test "tests/*.test.js"`), with no `vscode`.
   - `console.` appears only in `shared/log.js`; every `catch` logs, answers a failure, or is marked `EXPECTED:`.
 - `extension-load.test.js`: `src/index.js` and every module it requires load against an empty stand-in for `vscode`.
 - **Mutants**: `node tools/mutation-check.js` breaks one rule at a time, restores the file, and reports any rule no
-  test catches (T1 lists the 36).
+  test catches (T1 lists the 37).
 
 ## 12. Not in this plan
 

@@ -13,6 +13,7 @@ const { claudeAgent } = require('../src/features/claude-usage/index.js');
 const { codexAgent } = require('../src/features/codex-usage/index.js');
 const { grokAgent } = require('../src/features/grok-usage/index.js');
 const { antigravityAgent } = require('../src/features/antigravity-usage/index.js');
+const { buildHoverMarkdown } = require('../src/features/usage-display/index.js');
 
 const MANIFEST = require('../package.json');
 const DECLARED = MANIFEST.contributes.configuration.properties;
@@ -109,18 +110,31 @@ test('the settings page opens filtered to the extension (D14)', async () => {
     assert.deepEqual(commands, [['workbench.action.openSettings', '@ext:kritblade.agent-usage']]);
 });
 
-test('the checkboxes are exactly the agents\' automatic-order windows, and render as a checkbox list', () => {
+test('the dot setting declares no window of its own: any agent\'s window key is a boolean, and it points to Status bar dots', () => {
     const statusBarDots = DECLARED['agentUsage.statusBarDots'];
-    const automaticKeys = [claudeAgent, codexAgent, grokAgent, antigravityAgent].flatMap((agent) =>
-        agent.automaticDotOrder.map((windowId) => `${agent.id}/${windowId}`),
-    );
-    assert.deepEqual(Object.keys(statusBarDots.properties), automaticKeys);
-    assert.equal(statusBarDots.additionalProperties, false);
-    for (const property of Object.values(statusBarDots.properties)) {
-        assert.equal(property.type, 'boolean');
-        assert.equal(property.default, false);
-    }
+    // No declared properties and no additionalProperties: VS Code's settings page shows "Edit in settings.json", not checkboxes.
+    assert.equal(statusBarDots.properties, undefined);
+    assert.equal(statusBarDots.additionalProperties, undefined);
     assert.deepEqual(statusBarDots.default, {});
+    const patterns = Object.entries(statusBarDots.patternProperties);
+    assert.equal(patterns.length, 1);
+    const [pattern, valueSchema] = patterns[0];
+    assert.deepEqual(valueSchema, { type: 'boolean' });
+    const keyPattern = new RegExp(pattern);
+    const agents = [claudeAgent, codexAgent, grokAgent, antigravityAgent];
+    const windowKeys = agents.flatMap((agent) => agent.automaticDotOrder.map((windowId) => `${agent.id}/${windowId}`));
+    for (const key of [...windowKeys, 'antigravity/gemini-argon-wtu-weekly']) assert.match(key, keyPattern);
+    assert.doesNotMatch('unknown/weekly', keyPattern);
+    const commandIds = {
+        refresh: 'agentUsage.refresh',
+        openSettings: 'agentUsage.openSettings',
+        chooseStatusBarDots: 'agentUsage.chooseStatusBarDots',
+        showLog: 'agentUsage.showLog',
+    };
+    const hover = buildHoverMarkdown({ states: [], now: new Date(), commandIds });
+    const linkLabel = hover.match(/\[\$\(checklist\) ([^\]]+)\]\(command:agentUsage\.chooseStatusBarDots\)/)?.[1];
+    assert.ok(linkLabel, 'the popup has a Status bar dots link');
+    assert.ok(statusBarDots.markdownDescription.includes(`click ${linkLabel} in the popup`), `the description names the popup's "${linkLabel}" link`);
 });
 
 test('the commands in package.json are the ones src/index.js registers', () => {

@@ -3,7 +3,8 @@
  * Live check of the usage popup in an isolated VS Code: its own profile under `.vscode-test/`, this extension loaded
  * from source, real mouse events sent through the DevTools port. Measures the popup's opening on a click and on a
  * resting mouse, checks that a click elsewhere closes it, and that its Settings link closes it and opens AgentUsage's
- * settings page with the item still in its place.
+ * settings page with the item still in its place. On that page the dot setting shows no checkboxes and points to the
+ * popup's Status bar dots link.
  * Usage: node tools/popup-check.js   (VS Code from VSCODE_EXECUTABLE, else the first install path found)
  * A VS Code window opens for about half a minute; the profile folder is deleted at the end.
  */
@@ -142,8 +143,14 @@ async function runChecks(devtools) {
     );
     const search = await evaluate(`document.querySelector('.settings-editor .suggest-input-container .view-lines')?.innerText ?? null`);
     const checkboxCount = await evaluate(`document.querySelectorAll('.settings-editor .setting-list-object-input-key-checkbox').length`);
+    const pageText = (await evaluate(`document.querySelector('.settings-editor')?.innerText ?? ''`)) ?? '';
     record('its Settings link opens the filtered settings page', search === `@ext:${EXTENSION_ID}`, `search ${JSON.stringify(search)}`);
-    record('the settings page shows the ten dot checkboxes', checkboxCount === 10, `${checkboxCount} checkboxes`);
+    record('the settings page shows no dot checkboxes', checkboxCount === 0, `${checkboxCount} checkboxes`);
+    record(
+        'the settings page tells you to choose the dots through Status bar dots',
+        pageText.includes('then click Status bar dots in the popup'),
+        pageText.includes('Edit in settings.json') ? 'with Edit in settings.json' : 'no Edit in settings.json link',
+    );
     return results;
 }
 

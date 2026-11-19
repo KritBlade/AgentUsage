@@ -9,9 +9,10 @@ the VS Code status bar. Click the item for every agent's details.
 
 ## The status bar
 
-- **Choosing the dots**: on AgentUsage's settings page (the popup's **Settings** link), check the windows to show in
-  `agentUsage.statusBarDots`. Exactly the checked ones show, up to `agentUsage.maxStatusBarDots` (4). The popup's
-  **Status bar dots** link opens the same choice as a checklist with live percentages.
+- **Choosing the dots**: click AgentUsage's item in the status bar, then click **Status bar dots** in the popup. A
+  checklist lists every window with a reading, with live percentages, so a new window appears in it as soon as an
+  agent reports it. Exactly the checked ones show, up to `agentUsage.maxStatusBarDots` (4). The choice is saved in
+  `agentUsage.statusBarDots`; the settings page has no checkboxes for it.
 - **With nothing checked**, the dots are placed automatically, shared fairly between the agents that have a reading:
   - one agent shows its windows (Claude: 5h, Weekly, Fable);
   - two agents get two dots each;
@@ -69,7 +70,7 @@ unofficial and can change without notice.
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `agentUsage.statusBarDots` | none checked | one checkbox per window, named `<agent>/<window id>`; none checked places the dots automatically. `session` is the 5-hour window; Antigravity's `3p` is its Claude and GPT group |
+| `agentUsage.statusBarDots` | none checked | the dots chosen with **Status bar dots** in the popup, saved as `"<agent>/<window id>": true`; none checked places the dots automatically. `session` is the 5-hour window; Antigravity's `3p` is its Claude and GPT group |
 | `agentUsage.maxStatusBarDots` | `4` | most dots the status bar shows (1–8) |
 | `agentUsage.isAgentNameShown` | on | each agent's name beside its icon; off shows the icons only |
 | `agentUsage.agents` | all four | agents to read, in status bar order |
