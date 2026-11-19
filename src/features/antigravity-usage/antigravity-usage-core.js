@@ -1,21 +1,46 @@
 'use strict';
 /**
- * agy's `/quota` answer (`agy -p /quota --output-format json`), as pure functions: model groups, each with a 5-hour
- * and a weekly bucket that give the fraction remaining.
+ * agy's `/quota` read (`agy -p /quota --output-format json`), as pure functions: the environment it runs with, and its
+ * answer: model groups, each with a 5-hour and a weekly bucket that give the fraction remaining.
  */
 const { toUsedPercent, parseIsoResetTime } = require('../../shared/usage-window.js');
 
+/**
+ * About every 15 minutes an agy run starts agy's background updater (`agy --bg-updater`), which runs `agy --version` in
+ * a new console window. On Windows that window flashes on the desktop: `windowsHide` on AgentUsage's call does not
+ * reach it.
+ * With this variable set, the run skips the update check. agy still updates itself when the user runs it.
+ */
+const AUTO_UPDATE_OFF_VARIABLE = 'AGY_CLI_DISABLE_AUTO_UPDATE';
 const WINDOW_LABELS = Object.freeze({ '5h': '5h', weekly: 'Weekly' });
 const WINDOW_ORDER = Object.freeze({ '5h': 0, weekly: 1 });
 const UNKNOWN_WINDOW_ORDER = 9;
+/** VS Code's brand codicons (from VS Code 1.131) that replace a group's leading model names in a compact label. */
+const GROUP_ICONS = Object.freeze([
+    Object.freeze({ namePattern: /^Gemini\b/, icons: '$(google-gemini)' }),
+    Object.freeze({ namePattern: /^Claude and GPT\b/, icons: '$(claude)$(openai)' }),
+]);
 
 /** "Gemini Models" reads as "Gemini", "Claude and GPT models" as "Claude and GPT". */
 function groupLabel(name) {
     return name.replace(/\s+models$/i, '').trim();
 }
 
+/** "Gemini" reads as `$(google-gemini)`, "Gemini 4 Argon" as `$(google-gemini) 4 Argon`; a group without an icon gives undefined. */
+function groupCompactLabel(label) {
+    const match = GROUP_ICONS.find(({ namePattern }) => namePattern.test(label));
+    if (!match) return undefined;
+    const rest = label.replace(match.namePattern, '').trim();
+    return rest ? `${match.icons} ${rest}` : match.icons;
+}
+
 function firstLine(text) {
     return String(text).trim().split('\n')[0] ?? '';
+}
+
+/** The environment variables the quota read runs with: the given ones, with agy's auto-update turned off. */
+function quotaEnvironmentVariables(environmentVariables) {
+    return { ...environmentVariables, [AUTO_UPDATE_OFF_VARIABLE]: 'true' };
 }
 
 /**
@@ -39,6 +64,7 @@ function parseAntigravityQuota(stdout, fetchedAt) {
     for (const group of groups) {
         if (typeof group?.name !== 'string' || !Array.isArray(group.buckets)) continue;
         const label = groupLabel(group.name);
+        const compactLabel = groupCompactLabel(label);
         const buckets = [...group.buckets].sort(
             (left, right) => (WINDOW_ORDER[left?.window] ?? UNKNOWN_WINDOW_ORDER) - (WINDOW_ORDER[right?.window] ?? UNKNOWN_WINDOW_ORDER),
         );
@@ -50,7 +76,9 @@ function parseAntigravityQuota(stdout, fetchedAt) {
                 droppedBuckets.push(String(bucket?.id ?? '(no id)'));
                 continue;
             }
-            const window = { id: bucket.id, label: `${label} ${WINDOW_LABELS[bucket.window] ?? bucket.name ?? bucket.window}`, usedPercent };
+            const windowLabel = WINDOW_LABELS[bucket.window] ?? bucket.name ?? bucket.window;
+            const window = { id: bucket.id, label: `${label} ${windowLabel}`, usedPercent };
+            if (compactLabel) window.compactLabel = `${compactLabel} ${windowLabel}`;
             if (reset.resetsAt) window.resetsAt = reset.resetsAt;
             windows.push(window);
         }
@@ -58,4 +86,4 @@ function parseAntigravityQuota(stdout, fetchedAt) {
     return { snapshot: { agentId: 'antigravity', windows, fetchedAt }, droppedBuckets };
 }
 
-module.exports = { parseAntigravityQuota };
+module.exports = { parseAntigravityQuota, quotaEnvironmentVariables };

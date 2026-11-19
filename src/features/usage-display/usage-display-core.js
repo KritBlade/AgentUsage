@@ -10,6 +10,11 @@
 const WARNING_PERCENT = 80;
 const CRITICAL_PERCENT = 95;
 const BAR_CELLS = 10;
+/**
+ * Between agents: a bar with an en space on each side. Some icons, such as `$(rocket)`, are drawn to the left edge of
+ * their glyph, and with plain spaces the bar ran into them.
+ */
+const SEGMENT_SEPARATOR = '\u2002|\u2002';
 const WEEKDAY_FORMAT = new Intl.DateTimeFormat('en', { weekday: 'short' });
 
 /** 🟢 below 80%, 🟡 from 80%, 🔴 from 95%. */
@@ -139,13 +144,15 @@ function placedDotKeys(placed) {
     return [...placed].flatMap(([agentId, windows]) => windows.map((window) => dotKey(agentId, window.id)));
 }
 
-function dotText(window) {
-    return `${usageSignal(window.usedPercent)} ${window.label} ${Math.round(window.usedPercent)}%`;
+function dotText(window, isAgentNameShown) {
+    const label = isAgentNameShown ? window.label : (window.compactLabel ?? window.label);
+    return `${usageSignal(window.usedPercent)} ${label} ${Math.round(window.usedPercent)}%`;
 }
 
 /**
- * `$(sparkle) Claude 🟢 5h 4% · 🟢 Weekly 75% | $(zap) Grok 🟢 Weekly 16%`, or without names
- * `$(sparkle) 🟢 5h 4% · 🟢 Weekly 75% | $(zap) 🟢 Weekly 16%`; `$(warning)` marks a failed last read.
+ * `$(sparkle) Claude 🟢 5h 4% · 🟢 Weekly 75% | $(rocket) Antigravity 🟢 Gemini 5h 8%`, or without names
+ * `$(sparkle) 🟢 5h 4% · 🟢 Weekly 75% | $(rocket) 🟢 $(google-gemini) 5h 8%`, where a window's compact label replaces
+ * its model names with icons; `$(warning)` marks a failed last read.
  * @param {{ isAgentNameShown: boolean }} options
  */
 function buildStatusText(states, placed, { isAgentNameShown }) {
@@ -155,9 +162,10 @@ function buildStatusText(states, placed, { isAgentNameShown }) {
         if (windows.length === 0) continue;
         const name = isAgentNameShown ? ` ${state.agent.statusBarName}` : '';
         const warning = hasFailedRead(state) ? ' $(warning)' : '';
-        segments.push(`$(${state.agent.icon})${name}${warning} ${windows.map(dotText).join(' · ')}`);
+        const dots = windows.map((window) => dotText(window, isAgentNameShown)).join(' · ');
+        segments.push(`$(${state.agent.icon})${name}${warning} ${dots}`);
     }
-    if (segments.length > 0) return segments.join(' | ');
+    if (segments.length > 0) return segments.join(SEGMENT_SEPARATOR);
     return states.some(hasFailedRead) ? '$(pulse) AgentUsage $(warning)' : '$(pulse) AgentUsage';
 }
 

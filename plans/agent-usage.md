@@ -1,26 +1,30 @@
 # AgentUsage — one status bar item for the usage limits of every coding-agent CLI
 
-**v0.9 — AgentUsage's own icon; a click opens the usage popup at once and a click on any of its links closes it; the
-dots are chosen on the settings page; names can be hidden; reads run every minute.**
-- **Its own icon** (D19): four slanted usage meters, one colour per agent, on upstream's dark rounded tile:
-  Claude orange, Codex white, Grok violet, Antigravity blue.
-- **A click on the status bar item opens the popup at once** (D17): 23–50 ms, measured in an isolated VS Code 1.146
-  driven with real mouse events. Resting the mouse still opens it, after VS Code's 1500 ms on macOS. Refresh moved from
-  the click to the popup's first link.
-- **Each of the popup's links closes it before acting** (D18), and the item stays between the same neighbours.
-- The popup's new **Settings** link opens AgentUsage's settings page (D14).
-- `agentUsage.statusBarDots` is one checkbox per window:
-  - With none checked, the dots are placed automatically (D2, D10).
-  - With any checked, exactly those show.
-  - It replaces the four `agentUsage.<agent>.dots` orders and `agentUsage.extraDots`. **AgentUsage: Choose Status Bar
-    Dots** is now one checklist that writes the same setting.
-- With `agentUsage.isAgentNameShown` off, each agent shows only its icon (D15).
-- Reads run every 60 s by default (D16). The popup is built from the last reading and never reads by itself.
-- Release VSIX files are kept in `dist/`, one per version, and pushed with the source.
+**v0.10 — agy's reads no longer flash a console window on Windows; with names hidden, Antigravity's model groups show
+as brand icons; the tests and the mutation check pass on Windows as on macOS.**
+- About every 15 minutes, an `agy` run starts agy's background updater, which runs `agy --version` in a new, visible
+  console window. `windowsHide` on AgentUsage's own call does not reach that grandchild, so polling flashed a black
+  window on the desktop every 15 minutes (§1).
+- AgentUsage now runs agy with `AGY_CLI_DISABLE_AUTO_UPDATE=true` on every OS, so its reads skip the update check
+  (A4). agy still updates itself whenever you run it.
+- With `agentUsage.isAgentNameShown` off, `Gemini 5h` reads `$(google-gemini) 5h` and `Claude and GPT 5h` reads
+  `$(claude)$(openai) 5h` (D20, §3). The popup keeps the words. VS Code has these icons from 1.131, so
+  `engines.vscode` is now `^1.131.0`.
+- The bar between agents has an en space on each side, so it no longer runs into `$(rocket)`, whose glyph reaches its
+  left edge (§3).
+- Shipped as 0.4.2 and installed on your Windows machine. Each open VS Code window keeps running 0.4.1, and keeps
+  flashing, until it reloads.
+- AgentUsage must work on Windows and macOS alike. Two Windows gaps are closed (T1):
+  - the Claude config-dir test builds its expected paths with `path.join`;
+  - `tools/mutation-check.js` matches each mutant's line breaks to the file's, since Git checks files out with CRLF
+    on Windows.
+- A stale agy sign-in made agy's quota answer hold only the weekly buckets. Signing in again (`/logout`, then
+  `/login`, in `agy`) brought the 5-hour ones back, plus a third group, Gemini 4 Argon, whose weekly bucket has no
+  checkbox and no automatic place (§1).
 - Owed:
   - your look at 0.4.1 (V1);
   - P2's renewal half;
-  - the Windows run (V2).
+  - the rest of the Windows run (V2), including a 30-minute process watch after the reload.
 - The old fork is uninstalled: AgentUsage has all its features (D8).
 
 AgentUsage shows how much of each coding agent's usage limits is spent: Claude Code, Codex, Grok and Antigravity
@@ -101,8 +105,12 @@ the last numbers and marks nothing in the status bar, because only an expired to
   close the popup".
 - **D19 — AgentUsage has its own icon, for more agents than upstream's two** (2026-11-17): "make another one that
   represent our own logo that support more agents, perhaps the meter have 4 lines in different color".
+- **D20 — with names hidden, model names inside a window's label become icons too** (2026-11-19): "the gemini doesn't
+  have an icon...so i disable showing the agent name still showing now". VS Code's brand codicons stand in:
+  `$(google-gemini)` for Gemini, `$(claude)$(openai)` for Claude and GPT (§3).
 
-**Decisions owed:** none.
+**Decisions owed:** whether Gemini 4 Argon Weekly (`antigravity/gemini-argon-wtu-weekly`) gets a checkbox and a place
+in Antigravity's automatic order. D11 names four Antigravity dots; today the window shows only in the popup.
 
 ---
 
@@ -115,21 +123,21 @@ the last numbers and marks nothing in the status bar, because only an expired to
 | P2 | Trial: `grok agent stdio` with ACP `_x.ai/billing` (D9). The protocol and the answer, then, after the token expires at 02:33 UTC, whether one run renews it and `grok` still signs in afterwards | protocol done; renewal owed | the protocol, live 21:33: `initialize` 26 ms, `_x.ai/billing` 215 ms, 0.9 s in all, exited by itself; `auth.json` was untouched (its token still valid). The renewal needs three things: a new `expires_at` in `auth.json`; the billing endpoint answering with the new token; and a later `grok` session starting with no sign-in prompt. It is adopted only if all three hold. To rerun after 02:33 UTC: `node tools/cli-login-times.js grok`, `node tools/cli-rpc-probe.js grok`, `node tools/cli-login-times.js grok` |
 | S1 | Dev layout (§8): `src/index.js`, `src/vscode/`, `src/macos/`, `src/windows/`, `src/shared/`, `src/features/<feature>/`; plain CommonJS with no compiler boilerplate; `out/`, `FORK.md`, `changelog.md`, `l10n/` and `package.nls*.json` removed | built | `module-boundaries.test.js` (§11) passes; `grep -rn "__importStar\|sourceMappingURL" src/` finds nothing |
 | S2 | Logger: `src/shared/log.js` with mvu-helper's `createModuleLog` API, the `AgentUsage` output channel as its sink, `agentUsage.logVerbosity`; every `catch` logs (§9) | built | `log.test.js` (gating per level, source tags, sink swap); `module-boundaries.test.js`: `console.` only in `shared/log.js`, and every `catch` logs, answers a failure or is marked `EXPECTED:`; `shared.test.js`: unparseable credentials text never reaches the log |
-| S3 | Identity `kritblade.agent-usage` 0.4.1, display name AgentUsage, its own icon (D19), `main: ./src/index.js`, the commands and settings of §7 | built | `python3 tools/build-icon.py` wrote the SVG and the 256 px PNG from one geometry; Quick Look's render of the SVG matched the PNG. `vsce package` built `dist/agent-usage-0.4.1.vsix` (36 files, 59.2 KB, no `plans/`, `tests/`, `tools/`, `.vscode-test/`, upstream's `icon.png` or the SVG); `code --list-extensions` shows `kritblade.agent-usage@0.4.1`; `settings.test.js`: the five commands match between `package.json` and `src/index.js`, and every declared setting is read |
+| S3 | Identity `kritblade.agent-usage` 0.4.2, display name AgentUsage, its own icon (D19), `main: ./src/index.js`, the commands and settings of §7 | built | `python3 tools/build-icon.py` wrote the SVG and the 256 px PNG from one geometry; Quick Look's render of the SVG matched the PNG. `vsce package` built `dist/agent-usage-0.4.2.vsix` on Windows (37 files, 72.6 KB, no `plans/`, `tests/`, `tools/`, `.vscode-test/`, upstream's `icon.png` or the SVG); `settings.test.js`: the five commands match between `package.json` and `src/index.js`, and every declared setting is read |
 | A1 | Claude reader: the env token, then the store Claude Code itself uses on the OS (D12, §1); `five_hour`, `seven_day`, `limits[]` | built; macOS verified live | `claude-usage-core.test.js` on the 2026-11-17 answer, the service name, the keychain account and the rollout check; live 21:51 through `tools/read-agent-usage.js` from the keychain: 5h 27%, Weekly 78%, Fable 2%, plan `max · default_claude_max_5x`, 390 ms. The Windows path waits on V2 |
 | A2 | Codex reader per D13: `codex -s read-only -a never app-server`, method `account/rateLimits/read`; windows classified by length only (D4) | built; verified live | `codex-usage-core.test.js` on the P1 answer (a weekly window in the primary slot, a window without a length dropped); live 21:51: 5h 11%, Weekly 40%, plan `plus`, 3 free resets, 608 ms; Codex exits by itself |
 | A3 | Grok reader: `auth.json` in `GROK_HOME` and the `billing?format=credits` endpoint (§1); the token is used only while unexpired and never renewed (D9) | built; verified live | `grok-usage-core.test.js` on the 2026-11-17 answer (an expired session is refused without a request; the product split becomes the breakdown); live 21:51: Weekly 16% (GrokChat 13%, GrokBuild 3%), 314 ms; the `grok agent stdio` trial is P2 |
-| A4 | Antigravity reader: `agy -p /quota --output-format json --log-file <null device>` (§1) | built; verified live | `antigravity-usage-core.test.js` on the 2026-11-17 output; live 21:51: Gemini 5h 8%, Gemini Weekly 2%, Claude and GPT 5h 0%, Claude and GPT Weekly 0%, 3.2 s; the agy log folder held 5 files before and after |
+| A4 | Antigravity reader: `agy -p /quota --output-format json --log-file <null device>` with `AGY_CLI_DISABLE_AUTO_UPDATE=true` (§1) | built; verified live | `antigravity-usage-core.test.js` on the 2026-11-17 output, and the variable set with every other one kept; live 2026-11-17 21:51 on the Mac: Gemini 5h 8%, Gemini Weekly 2%, Claude and GPT 5h 0%, Claude and GPT Weekly 0%, 3.2 s; the agy log folder held 5 files before and after. Live 2026-11-19 09:37 on Windows, `node tools/read-agent-usage.js antigravity` with agy's update check due: read Gemini Weekly 2% and Claude and GPT Weekly 0% in 3.2 s (the stale sign-in's answer, §1) and started no `agy --bg-updater`, while VS Code's 0.4.1 started one, its `agy --version` and an `OpenConsole.exe` 2.5 s later. After signing in again, 09:53: five windows, Gemini 5h, Gemini Weekly, Claude and GPT 5h, Claude and GPT Weekly and Gemini 4 Argon Weekly, all 0%, 3.3 s |
 | H1 | Windows Credential Manager read (`src/windows/credential-manager.js`): PowerShell calling `CredReadW` for `Claude Code-credentials/claude-code-user`, decoded as UTF-8, with the `#0…#n` / `#m` chunks joined (D12) | built; unverified | `claude-usage-core.test.js`: the chunk joining, the target name and the rollout check; the PowerShell side waits on V2 (`cmdkey /list` shows the entry, and Claude's dots on Windows match `/usage` in `claude`) |
 | U1 | Window model: every reader answers `{ windows[], plan?, notes?, fetchedAt }` (§2) | built | the four core tests check each window's `id` and `label` against the §2 table |
 | U2 | Polling: a read per agent every 60 s by default (D16), §6's backoff, one read per agent at a time, a re-read after a reset passes, and a redraw as each agent lands (§6) | built | `usage-polling-core.test.js` (both backoff sequences, a longer retry-after, a forced read never cutting a rate-limit wait, a reset passed only after the reading and the 60 s guard); `settings.test.js` reads the 60 s default with no warning; V1 owes the look at Claude and Grok drawing before agy |
-| U3 | Status bar: at most `agentUsage.maxStatusBarDots` dots, either the checked ones or, with none checked, automatic placement (§3); the names left out with `agentUsage.isAgentNameShown` off (D15); `$(warning)` beside an agent whose last read failed | built | `usage-display-core.test.js`, with the real agent descriptors: every row of §3's automatic table, limits of 1 and 8, a window outside the order, §3's checked example, the limit cutting checked dots, a checked window without a reading, names hidden, a failed agent, nothing connected. Live at 22:24 from this Mac's readings with names off: `$(sparkle) 🟢 5h 56% \| $(hubot) 🟢 5h 12% \| $(zap) 🟢 Weekly 16% \| $(rocket) 🟢 Gemini 5h 8%`. V1 owes the look |
+| U3 | Status bar: at most `agentUsage.maxStatusBarDots` dots, either the checked ones or, with none checked, automatic placement (§3); the names left out with `agentUsage.isAgentNameShown` off (D15), and then each window's compact label in place of its model names (D20); `$(warning)` beside an agent whose last read failed | built | `usage-display-core.test.js`, with the real agent descriptors: every row of §3's automatic table, limits of 1 and 8, a window outside the order, §3's checked example, the limit cutting checked dots, a checked window without a reading, names hidden, compact labels only with names hidden, a failed agent, nothing connected; `antigravity-usage-core.test.js`: each group's compact label, and none for a group without an icon. Live 2026-11-19 on Windows, agy's reading with names off and two dots: `$(rocket) 🟢 $(google-gemini) 5h 0% · 🟢 $(google-gemini) Weekly 0%`. Owed: the look of the icons in the status bar after the reload (V2) |
 | U4 | Choosing dots: the checkbox setting `agentUsage.statusBarDots` on the settings page (D14), and AgentUsage: Choose Status Bar Dots as one checklist that writes it (§5) | built | `settings.test.js`: checked boxes read as keys; saving none removes the setting; the ten checkboxes are exactly the agents' automatic-order windows, with `additionalProperties: false`. VS Code 1.146's settings page draws such an object as a checkbox list, one row per declared property. `dot-choice.test.js`: the bar's dots come checked; a change is saved; unchanged automatic placement saves nothing; none checked saves none; a checked window without a reading is kept; Escape; more than the limit, with its notice; the notice with no reading. V1 owes: the Settings link opens the page, and checking three boxes shows exactly those three |
 | U5 | Popup: one table per agent with a reading or a failed read, the Not connected and Reading lines, four links: Refresh, Settings, Status bar dots, Log (§4); built at each redraw, never on opening (D16); opened at once by a click (D17); closed by any of its links (D18) | built; verified live | `usage-display-core.test.js` checks the markdown (tables, the empty Resets cell, the breakdown, notes, each failure line, the four links in order); `extension-activation.test.js`: the click command is `agentUsage.showUsagePopup` (hidden from the Command Palette) and runs `workbench.action.showHover`; each of the four links hides and shows the item before it acts. `node tools/popup-check.js`, live in an isolated VS Code 1.146 with real mouse events: the click opened it in 23–50 ms against 1528–1539 ms for a resting mouse; a click elsewhere closed it; its Settings link closed it and opened the page filtered to `@ext:kritblade.agent-usage` with ten checkboxes; the item kept its neighbours (`status.notifications`, `chat.statusBarEntry`). V1 owes your look |
-| T1 | Tests run with `npm test` (`node --test "tests/*.test.js"`); no `vscode` needed | built | 82 pass. `node tools/mutation-check.js` breaks 29 rules one at a time, and each one fails a test. The new rules: the click opening the popup, its command hidden from the palette, a popup link closing the popup, closing dropping the entry, the checked filter, the checked limit, the checked-or-automatic switch, the fair share, names hidden, the Settings link, the No reading now group, unchanged automatic placement saving nothing, checked keys listed, the over-limit notice, saving none removing the setting, only true checkboxes counting, the settings page filter, the 60 s default, Codex's automatic order. The unchanged rules: the 80% colour, not connected being no failure, the backoff doubling, a forced read never cutting a rate limit, Grok's expiry check, agy's `remaining_fraction` inversion, the keychain account rule, Codex's weekly-by-length, Claude's model windows, credentials text kept out of the log |
+| T1 | Tests run with `npm test` (`node --test "tests/*.test.js"`); no `vscode` needed | built | 85 pass on Windows. Expected paths are built with `path.join`, so they hold on both OSes. `node tools/mutation-check.js` breaks 33 rules one at a time, and each one fails a test: 33 of 33 caught on Windows. A mutant's line breaks follow the file's, so the mutants that span lines apply to Windows' CRLF checkout too. The rules: the click opening the popup, its command hidden from the palette, a popup link closing the popup, closing dropping the entry, the checked filter, the checked limit, the checked-or-automatic switch, the fair share, names hidden, compact labels with names hidden, agy's compact labels, the separator between agents, the Settings link, the No reading now group, unchanged automatic placement saving nothing, checked keys listed, the over-limit notice, saving none removing the setting, only true checkboxes counting, the settings page filter, the 60 s default, Codex's automatic order, the 80% colour, not connected being no failure, the backoff doubling, a forced read never cutting a rate limit, Grok's expiry check, agy's `remaining_fraction` inversion, agy's auto-update off for the quota read, the keychain account rule, Codex's weekly-by-length, Claude's model windows, credentials text kept out of the log |
 | M1 | README for AgentUsage: what it shows, where each number comes from on each platform, settings, the popup and the hover delay, the upstream MIT credit | built | every `agentUsage.*` key in the README exists in `package.json` and the reverse; the four command titles it names match `package.json` (the fifth, the click's, is hidden from the palette); the endpoints, the JSON-RPC method, agy's arguments and both credential names it quotes are found in `src/` |
 | V1 | Live on this Mac: package with `vsce`, install, all four agents read; the old fork uninstalled (D8) | 0.4.1 installed; old fork uninstalled; reload and your look owed | `code --list-extensions` shows `kritblade.agent-usage@0.4.1`, the only AgentUsage identity installed, and no `claude-codex-usage-keychain`. The open window keeps its earlier copy until it reloads. `tools/popup-check.js` passed against this source in an isolated VS Code. Owed after **Developer: Reload Window**: the status bar text, the icon in the Extensions view, the click popup and its four links closing it, the settings page's checkbox list, the checklist, and names off |
-| V2 | Live on your Windows machine: install the same VSIX, Claude read from Credential Manager or the file, Grok from its file, Codex and `agy` run | owed | live |
+| V2 | Live on your Windows machine: install the same VSIX, Claude read from Credential Manager or the file, Grok from its file, Codex and `agy` run | 0.4.2 installed; agy's read verified; the rest owed | `code --list-extensions` shows `kritblade.agent-usage@0.4.2`; agy's read is in A4. Owed after **Developer: Reload Window** in every VS Code window: Claude, Grok and Codex in the status bar, and a 30-minute watch of process creation (`Win32_Process` creation events) with no `agy --bg-updater`, `agy --version` or `OpenConsole.exe -Embedding` |
 
 ---
 
@@ -143,7 +151,7 @@ Codex was not read: its file token has expired. Windows was not probed.
 | Claude Code | `GET https://api.anthropic.com/api/oauth/usage` with `Authorization: Bearer`, `anthropic-beta: oauth-2025-04-20` and upstream's `User-Agent: claude-code/2.1.90` | `five_hour` and `seven_day` (`utilization`, `resets_at`); `limits[]` items of `kind: weekly_scoped` (`percent`, `resets_at`, `scope.model.display_name`); `subscriptionType` and `rateLimitTier` from the credentials as the plan |
 | Codex | the child process `codex -s read-only -a never app-server`, newline-delimited JSON-RPC: `initialize` (`clientInfo`), the notification `initialized`, then `account/rateLimits/read`; stdin is closed and Codex exits by itself (D13, P1) | `rateLimits.primary` and `rateLimits.secondary` (`usedPercent`, `windowDurationMins`, `resetsAt` in epoch seconds); `rateLimits.planType`; `rateLimitResetCredits.availableCount` |
 | Grok | `GET https://cli-chat-proxy.grok.com/v1/billing?format=credits` with Bearer `key` and `X-XAI-Token-Auth: xai-grok-cli` (the headers Grok's README gives for using `auth.json` against its proxy) | `config.currentPeriod` (`type: USAGE_PERIOD_TYPE_WEEKLY`, `end`); `config.creditUsagePercent`; `config.productUsage[]` (`product`, `usagePercent`) |
-| Antigravity | the child process `agy -p /quota --output-format json --log-file <null device>`, killed after 60 s | `status` (`"SUCCESS"`); `command.data.groups[]` (`name`), each with `buckets[]` (`id`, `window` `5h` or `weekly`, `remaining_fraction`, `reset_time`) |
+| Antigravity | the child process `agy -p /quota --output-format json --log-file <null device>` with `AGY_CLI_DISABLE_AUTO_UPDATE=true` in its environment, killed after 60 s | `status` (`"SUCCESS"`); `command.data.groups[]` (`name`), each with `buckets[]` (`id`, `window` `5h` or `weekly`, `remaining_fraction`, `reset_time`) |
 
 **Credentials, by platform:**
 
@@ -223,10 +231,28 @@ Codex was not read: its file token has expired. Windows was not probed.
 - **Antigravity**:
   - agy 1.5.10's own changelog says print mode answers `/usage`, `/quota` and `/credits` without the model.
     Measured: 0 tokens, about 3 s per read.
-  - The answer has two groups, Gemini Models and "Claude and GPT models", each with a 5-hour and a weekly bucket:
-    Gemini 92% and 98% remaining, the other group 100% and 100%.
+  - The answer holds model groups, each with buckets. On 2026-11-17 (agy 1.5.10, macOS): Gemini Models and "Claude and
+    GPT models", each with a 5-hour and a weekly bucket; Gemini 92% and 98% remaining, the other group 100% and 100%.
+  - On 2026-11-19 (agy 1.5.12, Windows) the answer depended on the sign-in:
+    - With the sign-in agy had kept, each group held only its weekly bucket, and the answer's description read "Within
+      each group, models share a weekly limit".
+    - After `/logout` and `/login` in `agy`, each group held both buckets again ("share a weekly limit and a 5-hour
+      limit"), and a third group appeared: Gemini 4 Argon, with only `gemini-argon-wtu-weekly`. Every bucket read 100%
+      remaining with windows starting at the sign-in.
+  - The reader takes whatever buckets arrive. Automatic placement skips a window with no reading and leaves out one
+    outside Antigravity's automatic order, so a missing Gemini 5h drops Antigravity's dot to Gemini Weekly, and Gemini 4
+    Argon Weekly shows only in the popup.
   - Each run writes a new log file under `~/.gemini/antigravity-cli/log/`; with `--log-file /dev/null` it writes none.
     The prompt history (`history.jsonl`) is not touched. `/credits` read `Remaining credits 0`, which is not used.
+  - **agy's background updater** (measured on Windows on 2026-11-19, agy 1.5.12):
+    - A run whose update check is due starts `agy --bg-updater --app_data_dir=antigravity-cli --gemini_dir=.gemini`
+      within a second. The check is due 15 minutes after the last one, which `~/.gemini/antigravity-cli/last_check.timestamp`
+      records by its modified time.
+    - The updater runs `agy --version` in a new console window, and Windows Terminal's `OpenConsole.exe -Embedding`
+      starts with it: the flash on the desktop. `windowsHide` on AgentUsage's call does not reach this grandchild.
+    - `AGY_CLI_DISABLE_AUTO_UPDATE` is named in agy's binary. With the timestamp set 95 minutes back, a run with it
+      `true` started no updater and left the timestamp alone; the same run without it started the updater, its
+      `agy --version` and `OpenConsole.exe` within 1 s, and wrote the timestamp.
   - VS Code's extension host has `~/.local/bin` on its `PATH`, so `agy` resolves.
 - **Not usable**:
   - agy's hub started by VS Code (`agy --hub`, its ports in `~/.gemini/antigravity/daemon/hub_*.json`) logs "You are
@@ -304,11 +330,19 @@ hover.
 
 ````
 $(sparkle) Claude 🟢 5h 4% | $(hubot) Codex 🟢 5h 12% | $(zap) Grok 🟢 Weekly 16% | $(rocket) Antigravity 🟢 Gemini 5h 8%
-$(sparkle) 🟢 5h 4% | $(hubot) 🟢 5h 12% | $(zap) 🟢 Weekly 16% | $(rocket) 🟢 Gemini 5h 8%
+$(sparkle) 🟢 5h 4% | $(hubot) 🟢 5h 12% | $(zap) 🟢 Weekly 16% | $(rocket) 🟢 $(google-gemini) 5h 8%
 ````
 
 - **Segment**: each agent is drawn as its icon and its name, then its dots. With `agentUsage.isAgentNameShown` off,
   the name is left out, as on the second line above (D15). A dot reads `<dot> <label> <rounded %>`.
+- **Separator**: segments are joined by `|` with an en space (U+2002) on each side; the examples above show plain
+  spaces. `$(rocket)` is drawn to its glyph's left edge, and with plain spaces the bar ran into it. VS Code's status
+  bar label keeps spaces (`white-space: pre`). Measured in an isolated VS Code 1.147: about 5 px wider per separator.
+- **Compact label** (D20): with names hidden, a dot uses its window's compact label when it has one, which puts VS
+  Code's brand codicons in place of the model names: Antigravity's `Gemini 5h` reads `$(google-gemini) 5h`,
+  `Claude and GPT Weekly` reads `$(claude)$(openai) Weekly`, and `Gemini 4 Argon Weekly` reads
+  `$(google-gemini) 4 Argon Weekly`. A group with no icon keeps its words. The popup and the checklist always use the
+  full label. The icons exist from VS Code 1.131, hence `engines.vscode ^1.131.0`.
 - **Dot colour**: 🟢 below 80%, 🟡 80–94%, 🔴 from 95% (D3).
 - **`$(warning)`** follows the agent's name, or its icon, when its last read failed. The numbers shown are still the
   last good ones.
@@ -431,12 +465,12 @@ The settings page lists them in this order (each setting's `order`):
 | `agentUsage.showLog` | AgentUsage: Show Log |
 
 **Identity**:
-- `kritblade.agent-usage` 0.4.1, with display name AgentUsage. It replaces the old fork, which is uninstalled (D8).
+- `kritblade.agent-usage` 0.4.2, with display name AgentUsage. It replaces the old fork, which is uninstalled (D8).
 - **Icon**: `images/agent-usage-icon.png` (256 px), drawn with `images/agent-usage-icon.svg` by
   `python3 tools/build-icon.py` (Pillow) from one geometry (D19). Each row is one agent's meter in status bar order, five
   segments each: Claude `#E07B53` (3 filled), Codex `#ECEEF2` (4), Grok `#A48BFA` (2), Antigravity `#4F8EF7` (3). No
   row is full, so the icon never reads as a limit hit. Upstream's `images/icon.png` stays in the folder, unshipped.
-- `main: ./src/index.js`, activated on `onStartupFinished`, `engines.vscode ^1.85.0`.
+- `main: ./src/index.js`, activated on `onStartupFinished`, `engines.vscode ^1.131.0` (the brand codicons of D20).
 - Plain JavaScript (CommonJS) with no build step: `src/` ships as it is.
 - `npm test` runs `node --test "tests/*.test.js"`; Node expands the glob itself, so it works the same on Windows.
 - `npm run package` runs `npx --yes @vscode/vsce@3 package --allow-missing-repository --out dist/`, which writes
@@ -576,13 +610,16 @@ All run under `npm test` (`node --test "tests/*.test.js"`), with no `vscode`.
 - `grok-usage-core.test.js`: the 2026-11-17 billing answer gives `credits` at 16% with the product breakdown; the
   period type names the window; the session with the latest expiry is picked; the expiry check.
 - `antigravity-usage-core.test.js`: the 2026-11-17 output gives four windows in §2's order (`Gemini 5h` at 8%, …); a
-  non-JSON answer and `status` ≠ `SUCCESS` each give a problem in agy's words; a bucket without a fraction is dropped.
+  non-JSON answer and `status` ≠ `SUCCESS` each give a problem in agy's words; a bucket without a fraction is dropped;
+  the quota read's environment sets `AGY_CLI_DISABLE_AUTO_UPDATE=true` and keeps every other variable; each group's
+  compact label (Gemini, Claude and GPT, Gemini 4 Argon), and none for a group without an icon.
 - `usage-polling-core.test.js`: both backoff sequences; a longer `retry-after`; a forced read never cutting a
   rate-limit wait; a reset that passed after the reading triggering a re-read only after 60 s.
 - `usage-display-core.test.js`, with the real agent descriptors, so their automatic orders are what is tested:
   - automatic placement: every row of §3's table, limits of 1 and 8, a window outside the order left out;
   - checked dots: §3's checked example, the limit cutting in status bar order, a checked window without a reading;
-  - the status text: the segments, names hidden, a failed agent, nothing to show;
+  - the status text: the segments, names hidden, compact labels with names hidden and full labels with names shown,
+    a failed agent, nothing to show;
   - the popup: the tables, the empty Resets cell, the breakdown, notes, each failure line, Not connected, Reading, the
     four links;
   - the checklist entries: grouped by agent, checked as given, and the "No reading now" group.
@@ -610,7 +647,7 @@ All run under `npm test` (`node --test "tests/*.test.js"`), with no `vscode`.
   - `console.` appears only in `shared/log.js`; every `catch` logs, answers a failure, or is marked `EXPECTED:`.
 - `extension-load.test.js`: `src/index.js` and every module it requires load against an empty stand-in for `vscode`.
 - **Mutants**: `node tools/mutation-check.js` breaks one rule at a time, restores the file, and reports any rule no
-  test catches (T1 lists the 29).
+  test catches (T1 lists the 33).
 
 ## 12. Not in this plan
 

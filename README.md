@@ -18,7 +18,9 @@ the VS Code status bar. Click the item for every agent's details.
   - four agents get one each;
   - dots left over go to the first agent in `agentUsage.agents` (Claude by default).
 - **Shorter**: turn off `agentUsage.isAgentNameShown` to show each agent's icon without its name:
-  `✦ 🟢 5h 27% | 🤖 🟢 5h 11%`.
+  `✦ 🟢 5h 27% | 🤖 🟢 5h 11%`. Antigravity's model groups then show as VS Code's brand icons too: `Gemini 5h`
+  becomes the Gemini icon and `5h`, and `Claude and GPT 5h` the Claude and OpenAI icons and `5h`. These icons need
+  VS Code 1.131 or later.
 - **Dot colours**: 🟢 below 80%, 🟡 80–94%, 🔴 from 95%.
 - **`$(warning)` beside an agent**: its last read failed. The numbers shown are the last good ones, and the popup says
   why.
@@ -43,7 +45,7 @@ its links, or press Escape. Resting the mouse on the item opens the same popup a
 | Claude Code | `GET api.anthropic.com/api/oauth/usage` | Read where Claude Code keeps it (see below). |
 | Codex | `codex -s read-only -a never app-server`, JSON-RPC `account/rateLimits/read` | None: Codex reads and renews its own login. |
 | Grok | `GET cli-chat-proxy.grok.com/v1/billing?format=credits` | `auth.json` in `GROK_HOME` (default `~/.grok`), used only while unexpired. |
-| Antigravity | `agy -p /quota --output-format json` | None: agy signs itself in. |
+| Antigravity | `agy -p /quota --output-format json`, with `AGY_CLI_DISABLE_AUTO_UPDATE=true` | None: agy signs itself in. |
 
 **Claude Code's token** is taken from the first of these that holds it:
 1. `CLAUDE_CODE_OAUTH_TOKEN`.
@@ -53,6 +55,9 @@ its links, or press Escape. Resting the mouse on the item opens the same popup a
 
 **Grok's token is never renewed.** Its refresh token rotates, and a renewal outside `grok` can sign the CLI out. Grok's
 token lives 6 hours, so 6 hours after `grok` last ran, Grok reads "token expired" until `grok` runs again.
+
+**agy's auto-update is off for AgentUsage's reads.** About every 15 minutes, an `agy` run starts agy's background
+updater, which on Windows flashes a console window on the desktop. agy still updates itself when you run it.
 
 **What is sent where:** tokens go only to their own service, and are never stored or logged. The usage endpoints are
 unofficial and can change without notice.
