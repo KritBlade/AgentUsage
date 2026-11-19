@@ -1,7 +1,13 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { pickGrokSession, isSessionExpired, parseGrokBilling } = require('../src/features/grok-usage/grok-usage-core.js');
+const {
+    pickGrokSession,
+    isSessionExpired,
+    agentEnvironmentVariables,
+    shouldTryRenewal,
+    parseGrokBilling,
+} = require('../src/features/grok-usage/grok-usage-core.js');
 
 /** `GET /v1/billing?format=credits` on 2026-11-17 at 20:35 UTC. */
 const LIVE_BILLING = {
@@ -47,9 +53,47 @@ test('the period type names the window', () => {
     assert.equal(parseGrokBilling(monthly, new Date()).snapshot.windows[0].label, 'Credits');
 });
 
-test('an answer without the credit percentage is a problem', () => {
-    assert.deepEqual(parseGrokBilling({ config: {} }, new Date()), { problem: 'the billing answer has no creditUsagePercent' });
-    assert.ok(parseGrokBilling({}, new Date()).problem);
+test('a new period with nothing used leaves the percentage out, and reads as 0% as grok itself shows it', () => {
+    /** `GET /v1/billing?format=credits` on 2026-11-19 at 10:17 UTC, a day into the period. */
+    const unusedPeriod = {
+        config: {
+            currentPeriod: { type: 'USAGE_PERIOD_TYPE_WEEKLY', start: '2026-11-18T15:51:49.587933+00:00', end: '2026-11-25T15:51:49.587933+00:00' },
+            onDemandCap: { val: 0 },
+            onDemandUsed: { val: 0 },
+            prepaidBalance: { val: 0 },
+        },
+    };
+    const [window] = parseGrokBilling(unusedPeriod, new Date()).snapshot.windows;
+    assert.deepEqual([window.label, window.usedPercent, window.resetsAt.toISOString()], ['Weekly', 0, '2026-11-25T15:51:49.587Z']);
+});
+
+test('without the percentage, the deprecated used and monthlyLimit give it', () => {
+    const answer = { config: { monthlyLimit: { val: 200 }, used: { val: 50 } } };
+    assert.equal(parseGrokBilling(answer, new Date()).snapshot.windows[0].usedPercent, 25);
+});
+
+test('an answer without config, or with an unreadable percentage, is a problem', () => {
+    assert.deepEqual(parseGrokBilling({}, new Date()), { problem: 'the billing answer has no config' });
+    assert.deepEqual(parseGrokBilling({ config: { creditUsagePercent: '16' } }, new Date()), {
+        problem: 'the billing answer has an unreadable creditUsagePercent',
+    });
+});
+
+test("grok agent stdio runs with grok's own updater off and every other variable kept", () => {
+    const given = { PATH: '/usr/local/bin', GROK_DISABLE_AUTOUPDATER: '0' };
+    assert.deepEqual(agentEnvironmentVariables(given), { PATH: '/usr/local/bin', GROK_DISABLE_AUTOUPDATER: '1' });
+    assert.equal(given.GROK_DISABLE_AUTOUPDATER, '0');
+});
+
+test('grok is started again for the same expired token only 15 minutes after a failed renewal', () => {
+    const session = { token: 't', expiresAt: new Date('2026-11-11T02:27:09Z') };
+    const failedAtMs = Date.parse('2026-11-19T10:00:00Z');
+    const failedRenewal = { expiresAtMs: session.expiresAt.getTime(), attemptedAtMs: failedAtMs };
+    assert.equal(shouldTryRenewal(session, undefined, failedAtMs), true);
+    assert.equal(shouldTryRenewal(session, failedRenewal, failedAtMs + 14 * 60_000), false);
+    assert.equal(shouldTryRenewal(session, failedRenewal, failedAtMs + 15 * 60_000), true);
+    const replaced = { token: 'u', expiresAt: new Date('2026-11-19T09:00:00Z') };
+    assert.equal(shouldTryRenewal(replaced, failedRenewal, failedAtMs + 60_000), true);
 });
 
 test('of several stored sessions, the one expiring last is used', () => {

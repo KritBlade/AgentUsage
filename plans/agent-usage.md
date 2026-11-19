@@ -1,26 +1,22 @@
 # AgentUsage — one status bar item for the usage limits of every coding-agent CLI
 
-**v0.9 — AgentUsage's own icon; a click opens the usage popup at once and a click on any of its links closes it; the
-dots are chosen on the settings page; names can be hidden; reads run every minute.**
-- **Its own icon** (D19): four slanted usage meters, one colour per agent, on upstream's dark rounded tile:
-  Claude orange, Codex white, Grok violet, Antigravity blue.
-- **A click on the status bar item opens the popup at once** (D17): 23–50 ms, measured in an isolated VS Code 1.146
-  driven with real mouse events. Resting the mouse still opens it, after VS Code's 1500 ms on macOS. Refresh moved from
-  the click to the popup's first link.
-- **Each of the popup's links closes it before acting** (D18), and the item stays between the same neighbours.
-- The popup's new **Settings** link opens AgentUsage's settings page (D14).
-- `agentUsage.statusBarDots` is one checkbox per window:
-  - With none checked, the dots are placed automatically (D2, D10).
-  - With any checked, exactly those show.
-  - It replaces the four `agentUsage.<agent>.dots` orders and `agentUsage.extraDots`. **AgentUsage: Choose Status Bar
-    Dots** is now one checklist that writes the same setting.
-- With `agentUsage.isAgentNameShown` off, each agent shows only its icon (D15).
-- Reads run every 60 s by default (D16). The popup is built from the last reading and never reads by itself.
-- Release VSIX files are kept in `dist/`, one per version, and pushed with the source.
+**v0.11 — grok renews its own expired token for Grok's read; a new period with nothing used reads 0%.**
+- Once Grok's stored token has expired, the Grok reader starts `grok agent stdio` hidden and sends ACP `initialize`.
+  grok renews the token itself, under its own `auth.json` lock, and writes it back; the reader then reads billing over
+  HTTP as before (D9, A3). AgentUsage still never renews or writes a Grok token. The popup says to run `grok` only when
+  grok cannot renew, and grok is then not started again for that token for 15 minutes.
+- `grok agent stdio` runs with `GROK_DISABLE_AUTOUPDATER=1`, so grok's own updater, which attached a console window in
+  P2's run, stays off.
+- A billing answer without `creditUsagePercent` reads as 0%, as grok's own CLI reads it: the answer leaves the
+  percentage out while a new period has nothing used (§1).
+- New setting `agentUsage.grokCommand` (default `grok`), like the Codex and Antigravity commands (§7).
+- Codex's and Grok's stdio JSON-RPC client is one module, `src/shared/json-rpc-process.js` (§8).
+- Shipped as 0.4.3 and installed on your Windows machine; each open VS Code window runs it after a reload.
 - Owed:
+  - your check that `grok` starts with no sign-in prompt after P2's renewal (P2);
+  - the first renewal inside VS Code, once the token expires at 16:17 UTC on 2026-11-19 (A3);
   - your look at 0.4.1 (V1);
-  - P2's renewal half;
-  - the Windows run (V2).
+  - the rest of the Windows run (V2), including a 30-minute process watch after the reload.
 - The old fork is uninstalled: AgentUsage has all its features (D8).
 
 AgentUsage shows how much of each coding agent's usage limits is spent: Claude Code, Codex, Grok and Antigravity
@@ -69,12 +65,12 @@ the last numbers and marks nothing in the status bar, because only an expired to
 - **D7 — VS Code's own hover** (2026-11-17).
 - **D8 — the old fork stays uninstalled; AgentUsage replaces it** (2026-11-17): "no need to reinstall my old fork,
   AgentUsage have all the feature from the old fork".
-- **D9 — Grok's token is read, never renewed; once it has expired, the hover says to run `grok`** (2026-11-17): "read
-  the token, don't renew it. just show run grok to fresh token. you can try grok agent stdio and see if it renews
-  token WITHOUT breaking login".
+- **D9 — AgentUsage reads Grok's token and never renews it; grok renews it itself** (2026-11-17): "read the token,
+  don't renew it. just show run grok to fresh token. you can try grok agent stdio and see if it renews token WITHOUT
+  breaking login". After P2's renewal (2026-11-19): "yes, go ahead to fix the bug and implement this change".
   - **Why**: auth.x.ai rotates refresh tokens, and renewing from outside has broken logins elsewhere (§1, Appendix A).
-  - **The trial**: `grok agent stdio` is adopted only if P2 shows it renews an expired token and `grok` still signs in
-    afterwards.
+  - **How**: once the stored token has expired, the reader starts `grok agent stdio`, whose ACP `initialize` renews it
+    under grok's own lock (P2, A3). When grok cannot renew, the popup says to run `grok`.
 - **D10 — a spare dot goes to Claude by default, and the user can replace it with any other dot** (2026-11-17).
 - **D11 — Antigravity gets four separate dots, one per window of its two model groups** (2026-11-17): "agy also show
   sonnet/opus, so it has to be 4 dots then."
@@ -101,8 +97,12 @@ the last numbers and marks nothing in the status bar, because only an expired to
   close the popup".
 - **D19 — AgentUsage has its own icon, for more agents than upstream's two** (2026-11-17): "make another one that
   represent our own logo that support more agents, perhaps the meter have 4 lines in different color".
+- **D20 — with names hidden, model names inside a window's label become icons too** (2026-11-19): "the gemini doesn't
+  have an icon...so i disable showing the agent name still showing now". VS Code's brand codicons stand in:
+  `$(google-gemini)` for Gemini, `$(claude)$(openai)` for Claude and GPT (§3).
 
-**Decisions owed:** none.
+**Decisions owed:** whether Gemini 4 Argon Weekly (`antigravity/gemini-argon-wtu-weekly`) gets a checkbox and a place
+in Antigravity's automatic order. D11 names four Antigravity dots; today the window shows only in the popup.
 
 ---
 
@@ -112,24 +112,24 @@ the last numbers and marks nothing in the status bar, because only an expired to
 |---|---|---|---|
 | C1 | Copy of the installed fork 0.2.4 into this folder, without `.vsixmanifest` and VS Code's `__metadata`; the readme's Claude credential line corrected | built | `diff -rq` against the installed folder: only `.vsixmanifest` is missing; `package.json` parses; the modules that need no `vscode` load in node; a sample Claude response renders `🟢 5h 31% · 🟢 Weekly 0%` |
 | P1 | Probe: `codex -s read-only -a never app-server` (the handshake, the `account/rateLimits/read` answer, the time per read) | done | live 2026-11-17 21:32: answered in 1.2 s after a 2.4 s `initialize`, 3.6 s in all; Codex exited by itself when stdin closed. Codex renewed its own expired token (`last_refresh` moved to 21:32, and the new token expires 2026-11-27). The answer is recorded in §1 and kept as the test fixture |
-| P2 | Trial: `grok agent stdio` with ACP `_x.ai/billing` (D9). The protocol and the answer, then, after the token expires at 02:33 UTC, whether one run renews it and `grok` still signs in afterwards | protocol done; renewal owed | the protocol, live 21:33: `initialize` 26 ms, `_x.ai/billing` 215 ms, 0.9 s in all, exited by itself; `auth.json` was untouched (its token still valid). The renewal needs three things: a new `expires_at` in `auth.json`; the billing endpoint answering with the new token; and a later `grok` session starting with no sign-in prompt. It is adopted only if all three hold. To rerun after 02:33 UTC: `node tools/cli-login-times.js grok`, `node tools/cli-rpc-probe.js grok`, `node tools/cli-login-times.js grok` |
+| P2 | Trial: `grok agent stdio` with ACP `_x.ai/billing` (D9). The protocol and the answer, then, after the token expires at 02:33 UTC, whether one run renews it and `grok` still signs in afterwards | done; adopted (D9, A3); your `grok` sign-in check owed | the protocol, live 2026-11-17 21:33 on the Mac: `initialize` 26 ms, `_x.ai/billing` 215 ms, 0.9 s in all, exited by itself; `auth.json` was untouched (its token still valid). The renewal needs three things: a new `expires_at` in `auth.json`; the billing endpoint answering with the new token; and a later `grok` session starting with no sign-in prompt. The first two hold, and you adopted it before the third was checked. Live 2026-11-19 10:17 on Windows, grok 1.0.77, the token expired since 2026-11-11: `initialize` answered in 811 ms, and grok rewrote `auth.json` at 10:17:19 with `expires_at` 16:17:19; `_x.ai/billing` answered in 154 ms; the REST billing endpoint answered with the new token; 1.3 s in all, exited by itself. Owed: you start `grok` and it asks for no sign-in. The run also started grok's own updater (§1). Rerun with `node tools/cli-login-times.js grok`, `node tools/cli-rpc-probe.js grok`, `node tools/cli-login-times.js grok` |
 | S1 | Dev layout (§8): `src/index.js`, `src/vscode/`, `src/macos/`, `src/windows/`, `src/shared/`, `src/features/<feature>/`; plain CommonJS with no compiler boilerplate; `out/`, `FORK.md`, `changelog.md`, `l10n/` and `package.nls*.json` removed | built | `module-boundaries.test.js` (§11) passes; `grep -rn "__importStar\|sourceMappingURL" src/` finds nothing |
 | S2 | Logger: `src/shared/log.js` with mvu-helper's `createModuleLog` API, the `AgentUsage` output channel as its sink, `agentUsage.logVerbosity`; every `catch` logs (§9) | built | `log.test.js` (gating per level, source tags, sink swap); `module-boundaries.test.js`: `console.` only in `shared/log.js`, and every `catch` logs, answers a failure or is marked `EXPECTED:`; `shared.test.js`: unparseable credentials text never reaches the log |
-| S3 | Identity `kritblade.agent-usage` 0.4.1, display name AgentUsage, its own icon (D19), `main: ./src/index.js`, the commands and settings of §7 | built | `python3 tools/build-icon.py` wrote the SVG and the 256 px PNG from one geometry; Quick Look's render of the SVG matched the PNG. `vsce package` built `dist/agent-usage-0.4.1.vsix` (36 files, 59.2 KB, no `plans/`, `tests/`, `tools/`, `.vscode-test/`, upstream's `icon.png` or the SVG); `code --list-extensions` shows `kritblade.agent-usage@0.4.1`; `settings.test.js`: the five commands match between `package.json` and `src/index.js`, and every declared setting is read |
+| S3 | Identity `kritblade.agent-usage` 0.4.3, display name AgentUsage, its own icon (D19), `main: ./src/index.js`, the commands and settings of §7 | built | `python3 tools/build-icon.py` wrote the SVG and the 256 px PNG from one geometry; Quick Look's render of the SVG matched the PNG. `vsce package` built `dist/agent-usage-0.4.3.vsix` on Windows (38 files, 75.6 KB, no `plans/`, `tests/`, `tools/`, `.vscode-test/`, upstream's `icon.png` or the SVG); `settings.test.js`: the five commands match between `package.json` and `src/index.js`, and every declared setting is read |
 | A1 | Claude reader: the env token, then the store Claude Code itself uses on the OS (D12, §1); `five_hour`, `seven_day`, `limits[]` | built; macOS verified live | `claude-usage-core.test.js` on the 2026-11-17 answer, the service name, the keychain account and the rollout check; live 21:51 through `tools/read-agent-usage.js` from the keychain: 5h 27%, Weekly 78%, Fable 2%, plan `max · default_claude_max_5x`, 390 ms. The Windows path waits on V2 |
 | A2 | Codex reader per D13: `codex -s read-only -a never app-server`, method `account/rateLimits/read`; windows classified by length only (D4) | built; verified live | `codex-usage-core.test.js` on the P1 answer (a weekly window in the primary slot, a window without a length dropped); live 21:51: 5h 11%, Weekly 40%, plan `plus`, 3 free resets, 608 ms; Codex exits by itself |
-| A3 | Grok reader: `auth.json` in `GROK_HOME` and the `billing?format=credits` endpoint (§1); the token is used only while unexpired and never renewed (D9) | built; verified live | `grok-usage-core.test.js` on the 2026-11-17 answer (an expired session is refused without a request; the product split becomes the breakdown); live 21:51: Weekly 16% (GrokChat 13%, GrokBuild 3%), 314 ms; the `grok agent stdio` trial is P2 |
-| A4 | Antigravity reader: `agy -p /quota --output-format json --log-file <null device>` (§1) | built; verified live | `antigravity-usage-core.test.js` on the 2026-11-17 output; live 21:51: Gemini 5h 8%, Gemini Weekly 2%, Claude and GPT 5h 0%, Claude and GPT Weekly 0%, 3.2 s; the agy log folder held 5 files before and after |
+| A3 | Grok reader: `auth.json` in `GROK_HOME` and the `billing?format=credits` endpoint (§1). Once the token has expired, `grok agent stdio` (`agentUsage.grokCommand`) with `GROK_DISABLE_AUTOUPDATER=1` is sent ACP `initialize`, so grok renews the token itself, and the file is read again; a token grok could not renew waits 15 minutes before grok is started for it again. AgentUsage never renews or writes the token (D9) | built; verified live; the first renewal inside VS Code owed | `grok-usage-core.test.js` on the 2026-11-17 and 2026-11-19 answers (the product split becomes the breakdown; a missing percentage reads 0%), the agent's environment, and the wait after a failed renewal. Live 2026-11-17 21:51 on the Mac: Weekly 16% (GrokChat 13%, GrokBuild 3%), 314 ms. Live 2026-11-19 10:25 on Windows: with the token grok renewed in P2, Weekly 0% in 300 ms; against a throwaway `GROK_HOME` holding an expired session with a fake refresh token, token expired in 1.6 s, a second read at once started no grok, grok started no updater and no `OpenConsole.exe`, and the real `auth.json` was untouched. Grok's renewal itself is P2. Owed: the first renewal inside VS Code after the token expires at 16:17 UTC; with `agentUsage.logVerbosity` at `verbose` the log reads "grok renewed its token" |
+| A4 | Antigravity reader: `agy -p /quota --output-format json --log-file <null device>` with `AGY_CLI_DISABLE_AUTO_UPDATE=true` (§1) | built; verified live | `antigravity-usage-core.test.js` on the 2026-11-17 output, and the variable set with every other one kept; live 2026-11-17 21:51 on the Mac: Gemini 5h 8%, Gemini Weekly 2%, Claude and GPT 5h 0%, Claude and GPT Weekly 0%, 3.2 s; the agy log folder held 5 files before and after. Live 2026-11-19 09:37 on Windows, `node tools/read-agent-usage.js antigravity` with agy's update check due: read Gemini Weekly 2% and Claude and GPT Weekly 0% in 3.2 s (the stale sign-in's answer, §1) and started no `agy --bg-updater`, while VS Code's 0.4.1 started one, its `agy --version` and an `OpenConsole.exe` 2.5 s later. After signing in again, 09:53: five windows, Gemini 5h, Gemini Weekly, Claude and GPT 5h, Claude and GPT Weekly and Gemini 4 Argon Weekly, all 0%, 3.3 s |
 | H1 | Windows Credential Manager read (`src/windows/credential-manager.js`): PowerShell calling `CredReadW` for `Claude Code-credentials/claude-code-user`, decoded as UTF-8, with the `#0…#n` / `#m` chunks joined (D12) | built; unverified | `claude-usage-core.test.js`: the chunk joining, the target name and the rollout check; the PowerShell side waits on V2 (`cmdkey /list` shows the entry, and Claude's dots on Windows match `/usage` in `claude`) |
 | U1 | Window model: every reader answers `{ windows[], plan?, notes?, fetchedAt }` (§2) | built | the four core tests check each window's `id` and `label` against the §2 table |
 | U2 | Polling: a read per agent every 60 s by default (D16), §6's backoff, one read per agent at a time, a re-read after a reset passes, and a redraw as each agent lands (§6) | built | `usage-polling-core.test.js` (both backoff sequences, a longer retry-after, a forced read never cutting a rate-limit wait, a reset passed only after the reading and the 60 s guard); `settings.test.js` reads the 60 s default with no warning; V1 owes the look at Claude and Grok drawing before agy |
-| U3 | Status bar: at most `agentUsage.maxStatusBarDots` dots, either the checked ones or, with none checked, automatic placement (§3); the names left out with `agentUsage.isAgentNameShown` off (D15); `$(warning)` beside an agent whose last read failed | built | `usage-display-core.test.js`, with the real agent descriptors: every row of §3's automatic table, limits of 1 and 8, a window outside the order, §3's checked example, the limit cutting checked dots, a checked window without a reading, names hidden, a failed agent, nothing connected. Live at 22:24 from this Mac's readings with names off: `$(sparkle) 🟢 5h 56% \| $(hubot) 🟢 5h 12% \| $(zap) 🟢 Weekly 16% \| $(rocket) 🟢 Gemini 5h 8%`. V1 owes the look |
+| U3 | Status bar: at most `agentUsage.maxStatusBarDots` dots, either the checked ones or, with none checked, automatic placement (§3); the names left out with `agentUsage.isAgentNameShown` off (D15), and then each window's compact label in place of its model names (D20); `$(warning)` beside an agent whose last read failed | built | `usage-display-core.test.js`, with the real agent descriptors: every row of §3's automatic table, limits of 1 and 8, a window outside the order, §3's checked example, the limit cutting checked dots, a checked window without a reading, names hidden, compact labels only with names hidden, a failed agent, nothing connected; `antigravity-usage-core.test.js`: each group's compact label, and none for a group without an icon. Live 2026-11-19 on Windows, agy's reading with names off and two dots: `$(rocket) 🟢 $(google-gemini) 5h 0% · 🟢 $(google-gemini) Weekly 0%`. Owed: the look of the icons in the status bar after the reload (V2) |
 | U4 | Choosing dots: the checkbox setting `agentUsage.statusBarDots` on the settings page (D14), and AgentUsage: Choose Status Bar Dots as one checklist that writes it (§5) | built | `settings.test.js`: checked boxes read as keys; saving none removes the setting; the ten checkboxes are exactly the agents' automatic-order windows, with `additionalProperties: false`. VS Code 1.146's settings page draws such an object as a checkbox list, one row per declared property. `dot-choice.test.js`: the bar's dots come checked; a change is saved; unchanged automatic placement saves nothing; none checked saves none; a checked window without a reading is kept; Escape; more than the limit, with its notice; the notice with no reading. V1 owes: the Settings link opens the page, and checking three boxes shows exactly those three |
 | U5 | Popup: one table per agent with a reading or a failed read, the Not connected and Reading lines, four links: Refresh, Settings, Status bar dots, Log (§4); built at each redraw, never on opening (D16); opened at once by a click (D17); closed by any of its links (D18) | built; verified live | `usage-display-core.test.js` checks the markdown (tables, the empty Resets cell, the breakdown, notes, each failure line, the four links in order); `extension-activation.test.js`: the click command is `agentUsage.showUsagePopup` (hidden from the Command Palette) and runs `workbench.action.showHover`; each of the four links hides and shows the item before it acts. `node tools/popup-check.js`, live in an isolated VS Code 1.146 with real mouse events: the click opened it in 23–50 ms against 1528–1539 ms for a resting mouse; a click elsewhere closed it; its Settings link closed it and opened the page filtered to `@ext:kritblade.agent-usage` with ten checkboxes; the item kept its neighbours (`status.notifications`, `chat.statusBarEntry`). V1 owes your look |
-| T1 | Tests run with `npm test` (`node --test "tests/*.test.js"`); no `vscode` needed | built | 82 pass. `node tools/mutation-check.js` breaks 29 rules one at a time, and each one fails a test. The new rules: the click opening the popup, its command hidden from the palette, a popup link closing the popup, closing dropping the entry, the checked filter, the checked limit, the checked-or-automatic switch, the fair share, names hidden, the Settings link, the No reading now group, unchanged automatic placement saving nothing, checked keys listed, the over-limit notice, saving none removing the setting, only true checkboxes counting, the settings page filter, the 60 s default, Codex's automatic order. The unchanged rules: the 80% colour, not connected being no failure, the backoff doubling, a forced read never cutting a rate limit, Grok's expiry check, agy's `remaining_fraction` inversion, the keychain account rule, Codex's weekly-by-length, Claude's model windows, credentials text kept out of the log |
+| T1 | Tests run with `npm test` (`node --test "tests/*.test.js"`); no `vscode` needed | built | 89 pass on Windows. Expected paths are built with `path.join`, so they hold on both OSes. `node tools/mutation-check.js` breaks 36 rules one at a time, and each one fails a test: 36 of 36 caught on Windows. A mutant's line breaks follow the file's, so the mutants that span lines apply to Windows' CRLF checkout too. The rules: the click opening the popup, its command hidden from the palette, a popup link closing the popup, closing dropping the entry, the checked filter, the checked limit, the checked-or-automatic switch, the fair share, names hidden, compact labels with names hidden, agy's compact labels, the separator between agents, the Settings link, the No reading now group, unchanged automatic placement saving nothing, checked keys listed, the over-limit notice, saving none removing the setting, only true checkboxes counting, the settings page filter, the 60 s default, Codex's automatic order, the 80% colour, not connected being no failure, the backoff doubling, a forced read never cutting a rate limit, grok's own updater off for `grok agent stdio`, Grok's missing percentage reading 0%, the wait after a failed Grok renewal, Grok's expiry check, agy's `remaining_fraction` inversion, agy's auto-update off for the quota read, the keychain account rule, Codex's weekly-by-length, Claude's model windows, credentials text kept out of the log |
 | M1 | README for AgentUsage: what it shows, where each number comes from on each platform, settings, the popup and the hover delay, the upstream MIT credit | built | every `agentUsage.*` key in the README exists in `package.json` and the reverse; the four command titles it names match `package.json` (the fifth, the click's, is hidden from the palette); the endpoints, the JSON-RPC method, agy's arguments and both credential names it quotes are found in `src/` |
 | V1 | Live on this Mac: package with `vsce`, install, all four agents read; the old fork uninstalled (D8) | 0.4.1 installed; old fork uninstalled; reload and your look owed | `code --list-extensions` shows `kritblade.agent-usage@0.4.1`, the only AgentUsage identity installed, and no `claude-codex-usage-keychain`. The open window keeps its earlier copy until it reloads. `tools/popup-check.js` passed against this source in an isolated VS Code. Owed after **Developer: Reload Window**: the status bar text, the icon in the Extensions view, the click popup and its four links closing it, the settings page's checkbox list, the checklist, and names off |
-| V2 | Live on your Windows machine: install the same VSIX, Claude read from Credential Manager or the file, Grok from its file, Codex and `agy` run | owed | live |
+| V2 | Live on your Windows machine: install the same VSIX, Claude read from Credential Manager or the file, Grok from its file, Codex and `agy` run | 0.4.2 installed; agy's read verified; the rest owed | `code --list-extensions` shows `kritblade.agent-usage@0.4.2`; agy's read is in A4. Owed after **Developer: Reload Window** in every VS Code window: Claude, Grok and Codex in the status bar, and a 30-minute watch of process creation (`Win32_Process` creation events) with no `agy --bg-updater`, `agy --version` or `OpenConsole.exe -Embedding` |
 
 ---
 
@@ -142,8 +142,8 @@ Codex was not read: its file token has expired. Windows was not probed.
 |---|---|---|
 | Claude Code | `GET https://api.anthropic.com/api/oauth/usage` with `Authorization: Bearer`, `anthropic-beta: oauth-2025-04-20` and upstream's `User-Agent: claude-code/2.1.90` | `five_hour` and `seven_day` (`utilization`, `resets_at`); `limits[]` items of `kind: weekly_scoped` (`percent`, `resets_at`, `scope.model.display_name`); `subscriptionType` and `rateLimitTier` from the credentials as the plan |
 | Codex | the child process `codex -s read-only -a never app-server`, newline-delimited JSON-RPC: `initialize` (`clientInfo`), the notification `initialized`, then `account/rateLimits/read`; stdin is closed and Codex exits by itself (D13, P1) | `rateLimits.primary` and `rateLimits.secondary` (`usedPercent`, `windowDurationMins`, `resetsAt` in epoch seconds); `rateLimits.planType`; `rateLimitResetCredits.availableCount` |
-| Grok | `GET https://cli-chat-proxy.grok.com/v1/billing?format=credits` with Bearer `key` and `X-XAI-Token-Auth: xai-grok-cli` (the headers Grok's README gives for using `auth.json` against its proxy) | `config.currentPeriod` (`type: USAGE_PERIOD_TYPE_WEEKLY`, `end`); `config.creditUsagePercent`; `config.productUsage[]` (`product`, `usagePercent`) |
-| Antigravity | the child process `agy -p /quota --output-format json --log-file <null device>`, killed after 60 s | `status` (`"SUCCESS"`); `command.data.groups[]` (`name`), each with `buckets[]` (`id`, `window` `5h` or `weekly`, `remaining_fraction`, `reset_time`) |
+| Grok | `GET https://cli-chat-proxy.grok.com/v1/billing?format=credits` with Bearer `key` and `X-XAI-Token-Auth: xai-grok-cli` (the headers Grok's README gives for using `auth.json` against its proxy). When the stored token has expired, first the child process `grok agent stdio` with ACP `initialize`, during which grok renews it (D9) | `config.currentPeriod` (`type: USAGE_PERIOD_TYPE_WEEKLY`, `end`); `config.creditUsagePercent`, 0% when absent; `config.productUsage[]` (`product`, `usagePercent`) |
+| Antigravity | the child process `agy -p /quota --output-format json --log-file <null device>` with `AGY_CLI_DISABLE_AUTO_UPDATE=true` in its environment, killed after 60 s | `status` (`"SUCCESS"`); `command.data.groups[]` (`name`), each with `buckets[]` (`id`, `window` `5h` or `weekly`, `remaining_fraction`, `reset_time`) |
 
 **Credentials, by platform:**
 
@@ -217,16 +217,43 @@ Codex was not read: its file token has expired. Windows was not probed.
   - **P2, at 21:33**: `grok agent stdio` answers ACP `initialize` (`protocolVersion` 1, `authMethods` `cached_token`
     and `grok.com`, `agentVersion` 1.0.88). `_x.ai/billing` then gives the same credits as the REST call, plus
     `subscription_tier: "SuperGrok"`, but no product split.
-  - In Grok's source, the billing handler takes `current_or_expired()`, so it never renews. The start-up sign-in step
-    (`run_auth_flow_steps`) does renew an expired token, under the `auth.json` lock, and writes it back. Whether
-    `agent stdio` runs that step when it starts is what P2's renewal half shows.
+  - In Grok's source, the billing handler takes `current_or_expired()`, so it never renews. ACP `initialize` does:
+    with an expired token it calls `auth_manager.silent_refresh()` (`xai-grok-shell/src/agent/mvp_agent/acp_agent.rs`),
+    which holds the `auth.json` lock across the IdP call and writes the rotated token back (`xai-grok-login/src/
+    manager.rs`). A dead refresh token only fails the refresh; a browser sign-in starts only on ACP `authenticate` with
+    `grok.com`. P2's run on 2026-11-19 confirmed the renewal on grok 1.0.77.
+  - `grok agent stdio` starts grok's own updater, `grok update --trigger=auto_background`, which attached a console and
+    downloaded grok 1.0.89 during P2's run. `GROK_DISABLE_AUTOUPDATER` set to anything but empty, `0`, `false`, `off` or
+    `no` turns it off (`xai-grok-pager-bin/src/main.rs`).
+  - In a new weekly period with nothing used, the billing answer leaves out `creditUsagePercent`: on 2026-11-19 it held
+    `currentPeriod`, `onDemandCap`, `onDemandUsed` and `prepaidBalance` only. Grok's own CLI reads a missing percent as
+    0% (`credit_balance_from_config` in `xai-grok-pager/src/app/effects/helpers.rs`), and AgentUsage reads it the same
+    way.
 - **Antigravity**:
   - agy 1.5.10's own changelog says print mode answers `/usage`, `/quota` and `/credits` without the model.
     Measured: 0 tokens, about 3 s per read.
-  - The answer has two groups, Gemini Models and "Claude and GPT models", each with a 5-hour and a weekly bucket:
-    Gemini 92% and 98% remaining, the other group 100% and 100%.
+  - The answer holds model groups, each with buckets. On 2026-11-17 (agy 1.5.10, macOS): Gemini Models and "Claude and
+    GPT models", each with a 5-hour and a weekly bucket; Gemini 92% and 98% remaining, the other group 100% and 100%.
+  - On 2026-11-19 (agy 1.5.12, Windows) the answer depended on the sign-in:
+    - With the sign-in agy had kept, each group held only its weekly bucket, and the answer's description read "Within
+      each group, models share a weekly limit".
+    - After `/logout` and `/login` in `agy`, each group held both buckets again ("share a weekly limit and a 5-hour
+      limit"), and a third group appeared: Gemini 4 Argon, with only `gemini-argon-wtu-weekly`. Every bucket read 100%
+      remaining with windows starting at the sign-in.
+  - The reader takes whatever buckets arrive. Automatic placement skips a window with no reading and leaves out one
+    outside Antigravity's automatic order, so a missing Gemini 5h drops Antigravity's dot to Gemini Weekly, and Gemini 4
+    Argon Weekly shows only in the popup.
   - Each run writes a new log file under `~/.gemini/antigravity-cli/log/`; with `--log-file /dev/null` it writes none.
     The prompt history (`history.jsonl`) is not touched. `/credits` read `Remaining credits 0`, which is not used.
+  - **agy's background updater** (measured on Windows on 2026-11-19, agy 1.5.12):
+    - A run whose update check is due starts `agy --bg-updater --app_data_dir=antigravity-cli --gemini_dir=.gemini`
+      within a second. The check is due 15 minutes after the last one, which `~/.gemini/antigravity-cli/last_check.timestamp`
+      records by its modified time.
+    - The updater runs `agy --version` in a new console window, and Windows Terminal's `OpenConsole.exe -Embedding`
+      starts with it: the flash on the desktop. `windowsHide` on AgentUsage's call does not reach this grandchild.
+    - `AGY_CLI_DISABLE_AUTO_UPDATE` is named in agy's binary. With the timestamp set 95 minutes back, a run with it
+      `true` started no updater and left the timestamp alone; the same run without it started the updater, its
+      `agy --version` and `OpenConsole.exe` within 1 s, and wrote the timestamp.
   - VS Code's extension host has `~/.local/bin` on its `PATH`, so `agy` resolves.
 - **Not usable**:
   - agy's hub started by VS Code (`agy --hub`, its ports in `~/.gemini/antigravity/daemon/hub_*.json`) logs "You are
@@ -239,7 +266,7 @@ Codex was not read: its file token has expired. Windows was not probed.
 | Outcome | Reason | Effect |
 |---|---|---|
 | no credential in any store, Grok has no session, `agy` not found | not connected | listed under Not connected in the popup; no dot |
-| HTTP 401 or 403; Grok `expires_at` already past (then no request is sent) | token expired | the last numbers stay; `$(warning)`; the popup says to run the CLI once |
+| HTTP 401 or 403; Grok `expires_at` still past after grok's renewal (then no request is sent) | token expired | the last numbers stay; `$(warning)`; the popup says to run the CLI once |
 | HTTP 429 | rate-limited | backoff (§6) honouring `retry-after`; `$(warning)` |
 | network error, timeout, any other status, unreadable JSON, agy exit ≠ 0 or `status` ≠ `SUCCESS` | error | backoff (§6); `$(warning)`; the popup shows the detail, for agy in its own words |
 
@@ -304,11 +331,19 @@ hover.
 
 ````
 $(sparkle) Claude 🟢 5h 4% | $(hubot) Codex 🟢 5h 12% | $(zap) Grok 🟢 Weekly 16% | $(rocket) Antigravity 🟢 Gemini 5h 8%
-$(sparkle) 🟢 5h 4% | $(hubot) 🟢 5h 12% | $(zap) 🟢 Weekly 16% | $(rocket) 🟢 Gemini 5h 8%
+$(sparkle) 🟢 5h 4% | $(hubot) 🟢 5h 12% | $(zap) 🟢 Weekly 16% | $(rocket) 🟢 $(google-gemini) 5h 8%
 ````
 
 - **Segment**: each agent is drawn as its icon and its name, then its dots. With `agentUsage.isAgentNameShown` off,
   the name is left out, as on the second line above (D15). A dot reads `<dot> <label> <rounded %>`.
+- **Separator**: segments are joined by `|` with an en space (U+2002) on each side; the examples above show plain
+  spaces. `$(rocket)` is drawn to its glyph's left edge, and with plain spaces the bar ran into it. VS Code's status
+  bar label keeps spaces (`white-space: pre`). Measured in an isolated VS Code 1.147: about 5 px wider per separator.
+- **Compact label** (D20): with names hidden, a dot uses its window's compact label when it has one, which puts VS
+  Code's brand codicons in place of the model names: Antigravity's `Gemini 5h` reads `$(google-gemini) 5h`,
+  `Claude and GPT Weekly` reads `$(claude)$(openai) Weekly`, and `Gemini 4 Argon Weekly` reads
+  `$(google-gemini) 4 Argon Weekly`. A group with no icon keeps its words. The popup and the checklist always use the
+  full label. The icons exist from VS Code 1.131, hence `engines.vscode ^1.131.0`.
 - **Dot colour**: 🟢 below 80%, 🟡 80–94%, 🔴 from 95% (D3).
 - **`$(warning)`** follows the agent's name, or its icon, when its last read failed. The numbers shown are still the
   last good ones.
@@ -402,7 +437,7 @@ How the choice applies:
   time has passed and its reading is more than 60 s old.
 - **Each agent's result redraws as it lands**, so Claude and Grok never wait for agy.
 - **Settings changes:**
-  - A change to `agents`, `refreshIntervalSeconds`, `codexCommand` or `antigravityCommand` restarts the timer and
+  - A change to `agents`, `refreshIntervalSeconds`, `codexCommand`, `grokCommand` or `antigravityCommand` restarts the timer and
     reads now.
   - A change to `statusBarDots`, `maxStatusBarDots` or `isAgentNameShown` only redraws.
   - A change to `logVerbosity` takes effect at once.
@@ -419,6 +454,7 @@ The settings page lists them in this order (each setting's `order`):
 | `agentUsage.agents` | `["claude", "codex", "grok", "antigravity"]` | agents to read, in status bar order; the first one takes the dots left over in automatic placement |
 | `agentUsage.refreshIntervalSeconds` | `60` (minimum 30) | polling interval (D16) |
 | `agentUsage.codexCommand` | `codex` | the command run for Codex (`<command> -s read-only -a never app-server`), found on VS Code's `PATH` |
+| `agentUsage.grokCommand` | `grok` | the command started when Grok's stored token has expired (`<command> agent stdio`), so grok renews it; found on VS Code's `PATH` |
 | `agentUsage.antigravityCommand` | `agy` | the command run for Antigravity, found on VS Code's `PATH` |
 | `agentUsage.logVerbosity` | `off` | `off`, `lifecycle`, `verbose` or `trace`; errors and warnings always log |
 
@@ -431,12 +467,12 @@ The settings page lists them in this order (each setting's `order`):
 | `agentUsage.showLog` | AgentUsage: Show Log |
 
 **Identity**:
-- `kritblade.agent-usage` 0.4.1, with display name AgentUsage. It replaces the old fork, which is uninstalled (D8).
+- `kritblade.agent-usage` 0.4.3, with display name AgentUsage. It replaces the old fork, which is uninstalled (D8).
 - **Icon**: `images/agent-usage-icon.png` (256 px), drawn with `images/agent-usage-icon.svg` by
   `python3 tools/build-icon.py` (Pillow) from one geometry (D19). Each row is one agent's meter in status bar order, five
   segments each: Claude `#E07B53` (3 filled), Codex `#ECEEF2` (4), Grok `#A48BFA` (2), Antigravity `#4F8EF7` (3). No
   row is full, so the icon never reads as a limit hit. Upstream's `images/icon.png` stays in the folder, unshipped.
-- `main: ./src/index.js`, activated on `onStartupFinished`, `engines.vscode ^1.85.0`.
+- `main: ./src/index.js`, activated on `onStartupFinished`, `engines.vscode ^1.131.0` (the brand codicons of D20).
 - Plain JavaScript (CommonJS) with no build step: `src/` ships as it is.
 - `npm test` runs `node --test "tests/*.test.js"`; Node expands the glob itself, so it works the same on Windows.
 - `npm run package` runs `npx --yes @vscode/vsce@3 package --allow-missing-repository --out dist/`, which writes
@@ -481,6 +517,7 @@ AgentUsage/
     │   ├── log.js                  createModuleLog, setLogSink, setLogVerbosity
     │   ├── usage-window.js         the §2 shapes as JSDoc; toUsedPercent, parseIsoResetTime
     │   ├── usage-http.js           GET with timeout; HTTP outcome → UsageResult; parseRetryAfterMs
+    │   ├── json-rpc-process.js     a hidden child process speaking newline-delimited JSON-RPC on stdio
     │   └── credentials-file.js     a CLI's JSON credentials file; missing → not connected
     └── features/
         ├── claude-usage/           index.js · claude-usage-core.js (pure) · claude-usage.js
@@ -499,8 +536,9 @@ agent takes one new feature folder, one line in `index.js`, and its windows' che
 
 **`shared/` is earned** (P3):
 - `usage-window.js` serves all six features.
-- `usage-http.js` serves Claude, Codex and Grok.
-- `credentials-file.js` serves the same three.
+- `usage-http.js` serves Claude and Grok.
+- `credentials-file.js` serves the same two.
+- `json-rpc-process.js` serves Codex (`codex app-server`) and Grok (`grok agent stdio`).
 - `log.js` serves every file.
 
 The keychain and Credential Manager readers live in `src/macos/` and `src/windows/`, so the platform coupling shows in
@@ -548,7 +586,8 @@ the path (P4).
 |---|---|---|
 | a CLI is not installed or is signed out | under Not connected in the popup; no dot, and its turn passes to the next agent | none |
 | a token expires | the last numbers stay, `$(warning)` beside the agent, and the popup says to run the CLI | numbers age until the CLI runs |
-| `grok` has not run for 6 hours | Grok reads token expired without sending a request, and its token is never renewed (D9) | GrokChat spending on the web goes unseen until `grok` runs |
+| Grok's 6-hour token expires | the reader starts `grok agent stdio`, grok renews the token itself, and the read goes on (D9) | about 1 s every 6 hours, per VS Code window |
+| grok cannot renew (its refresh token is dead, or `grok` is not found) | token expired, and the popup says to run `grok`; grok is not started again for that token for 15 minutes | GrokChat spending on the web goes unseen until `grok` signs in |
 | a provider answers 429 | backoff of 5 to 60 minutes; `$(warning)`; the popup names the next try | numbers age |
 | a network, HTTP or parse error | backoff of 2 to 60 minutes; `$(warning)`; the popup gives the detail | numbers age |
 | PowerShell cannot read Credential Manager (policy, antivirus) | an error naming PowerShell's exit code. The file is not read in its place, because Claude Code reads the file only when Credential Manager holds nothing | Claude's numbers on Windows |
@@ -574,15 +613,21 @@ All run under `npm test` (`node --test "tests/*.test.js"`), with no `vscode`.
 - `codex-usage-core.test.js`, on P1's answer: windows by length (a weekly window in the primary slot reads as weekly);
   a window without a length is dropped; the session label from the length; an unreadable reset; the free-resets note.
 - `grok-usage-core.test.js`: the 2026-11-17 billing answer gives `credits` at 16% with the product breakdown; the
-  period type names the window; the session with the latest expiry is picked; the expiry check.
+  2026-11-19 answer, without a percentage, gives 0%; the deprecated `used` over `monthlyLimit`; no config or an
+  unreadable percentage is a problem; the period type names the window; the session with the latest expiry is
+  picked; the expiry check; `grok agent stdio`'s environment turns grok's updater off and keeps every other variable;
+  grok is started again for the same expired token only 15 minutes after a failed renewal.
 - `antigravity-usage-core.test.js`: the 2026-11-17 output gives four windows in §2's order (`Gemini 5h` at 8%, …); a
-  non-JSON answer and `status` ≠ `SUCCESS` each give a problem in agy's words; a bucket without a fraction is dropped.
+  non-JSON answer and `status` ≠ `SUCCESS` each give a problem in agy's words; a bucket without a fraction is dropped;
+  the quota read's environment sets `AGY_CLI_DISABLE_AUTO_UPDATE=true` and keeps every other variable; each group's
+  compact label (Gemini, Claude and GPT, Gemini 4 Argon), and none for a group without an icon.
 - `usage-polling-core.test.js`: both backoff sequences; a longer `retry-after`; a forced read never cutting a
   rate-limit wait; a reset that passed after the reading triggering a re-read only after 60 s.
 - `usage-display-core.test.js`, with the real agent descriptors, so their automatic orders are what is tested:
   - automatic placement: every row of §3's table, limits of 1 and 8, a window outside the order left out;
   - checked dots: §3's checked example, the limit cutting in status bar order, a checked window without a reading;
-  - the status text: the segments, names hidden, a failed agent, nothing to show;
+  - the status text: the segments, names hidden, compact labels with names hidden and full labels with names shown,
+    a failed agent, nothing to show;
   - the popup: the tables, the empty Resets cell, the breakdown, notes, each failure line, Not connected, Reading, the
     four links;
   - the checklist entries: grouped by agent, checked as given, and the "No reading now" group.
@@ -610,7 +655,7 @@ All run under `npm test` (`node --test "tests/*.test.js"`), with no `vscode`.
   - `console.` appears only in `shared/log.js`; every `catch` logs, answers a failure, or is marked `EXPECTED:`.
 - `extension-load.test.js`: `src/index.js` and every module it requires load against an empty stand-in for `vscode`.
 - **Mutants**: `node tools/mutation-check.js` breaks one rule at a time, restores the file, and reports any rule no
-  test catches (T1 lists the 29).
+  test catches (T1 lists the 36).
 
 ## 12. Not in this plan
 

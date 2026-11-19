@@ -69,6 +69,7 @@ test('the declared defaults read back with no warning, and every declared settin
         isAgentNameShown: true,
         refreshIntervalSeconds: 60,
         codexCommand: 'codex',
+        grokCommand: 'grok',
         antigravityCommand: 'agy',
         logVerbosity: 'off',
     });

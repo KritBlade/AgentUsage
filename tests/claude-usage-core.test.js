@@ -2,6 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
+const path = require('node:path');
 const core = require('../src/features/claude-usage/claude-usage-core.js');
 
 /** The usage endpoint's answer on 2026-11-17 at 20:29 UTC, trimmed to the fields read. */
@@ -75,9 +76,9 @@ test('the credentials service name follows the config dir', () => {
 });
 
 test('the config dir and credentials file follow the environment', () => {
-    assert.equal(core.claudeConfigDir('/home/me', {}), '/home/me/.claude');
+    assert.equal(core.claudeConfigDir('/home/me', {}), path.join('/home/me', '.claude'));
     assert.equal(core.claudeConfigDir('/home/me', { CLAUDE_CONFIG_DIR: '/work/claude' }), '/work/claude');
-    assert.equal(core.claudeCredentialsFilePath('/home/me', {}), '/home/me/.claude/.credentials.json');
+    assert.equal(core.claudeCredentialsFilePath('/home/me', {}), path.join('/home/me', '.claude', '.credentials.json'));
 });
 
 test('the keychain account is $USER or the OS user when plain, else claude-code-user', () => {

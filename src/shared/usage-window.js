@@ -11,6 +11,8 @@
  * @typedef {object} UsageWindow  One quota window of one agent.
  * @property {string} id            Stable within its agent; the dot settings name the window by it.
  * @property {string} label         Short display label: `5h`, `Weekly`, `Fable`, `Gemini 5h`.
+ * @property {string} [compactLabel] The label with brand icons in place of model names, `$(google-gemini) 5h`, shown
+ *                                  in the status bar when agent names are hidden.
  * @property {number} usedPercent   0–100.
  * @property {Date} [resetsAt]      Absent when the provider sends none: a window with nothing used yet arrives
  *                                  without a reset time and still reads 0%.

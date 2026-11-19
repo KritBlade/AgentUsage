@@ -56,6 +56,7 @@ function readSettings() {
             'a number of seconds, at least 30',
         ),
         codexCommand: checkedValue(settings, 'codexCommand', isNonEmptyString, 'a command name or path'),
+        grokCommand: checkedValue(settings, 'grokCommand', isNonEmptyString, 'a command name or path'),
         antigravityCommand: checkedValue(settings, 'antigravityCommand', isNonEmptyString, 'a command name or path'),
         logVerbosity: checkedValue(
             settings,

@@ -147,12 +147,23 @@ test('the status text groups each agent\'s dots, marks a failed read, and can le
     const placed = display.placeDots({ states, checkedKeys: [], maxDots: 4 });
     assert.equal(
         display.buildStatusText(states, placed, { isAgentNameShown: true }),
-        '$(sparkle) Claude 🟢 5h 4% · 🟢 Weekly 75% · 🟢 Fable 2% | $(zap) Grok $(warning) 🟢 Weekly 16%',
+        '$(sparkle) Claude 🟢 5h 4% · 🟢 Weekly 75% · 🟢 Fable 2%\u2002|\u2002$(zap) Grok $(warning) 🟢 Weekly 16%',
     );
     assert.equal(
         display.buildStatusText(states, placed, { isAgentNameShown: false }),
-        '$(sparkle) 🟢 5h 4% · 🟢 Weekly 75% · 🟢 Fable 2% | $(zap) $(warning) 🟢 Weekly 16%',
+        '$(sparkle) 🟢 5h 4% · 🟢 Weekly 75% · 🟢 Fable 2%\u2002|\u2002$(zap) $(warning) 🟢 Weekly 16%',
     );
+});
+
+test('with names hidden, a window\'s compact label replaces its model names', () => {
+    const windows = [
+        { id: 'gemini-5h', label: 'Gemini 5h', compactLabel: '$(google-gemini) 5h', usedPercent: 7.9 },
+        { id: 'other-weekly', label: 'Other Weekly', usedPercent: 2 },
+    ];
+    const states = [connectedState('antigravity', {}, windows)];
+    const placed = new Map([['antigravity', windows]]);
+    assert.equal(display.buildStatusText(states, placed, { isAgentNameShown: true }), '$(rocket) Antigravity 🟢 Gemini 5h 8% · 🟢 Other Weekly 2%');
+    assert.equal(display.buildStatusText(states, placed, { isAgentNameShown: false }), '$(rocket) 🟢 $(google-gemini) 5h 8% · 🟢 Other Weekly 2%');
 });
 
 test('with nothing to show, the status text names AgentUsage', () => {

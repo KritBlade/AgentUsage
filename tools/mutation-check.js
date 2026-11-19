@@ -15,6 +15,7 @@ const CHOICE = 'src/features/usage-display/dot-choice.js';
 const SETTINGS = 'src/vscode/settings.js';
 const POLLING = 'src/features/usage-polling/usage-polling-core.js';
 const CLAUDE = 'src/features/claude-usage/claude-usage-core.js';
+const GROK = 'src/features/grok-usage/grok-usage-core.js';
 
 /** [what the mutant breaks, file, text to replace, replacement] */
 const MUTANTS = [
@@ -23,6 +24,9 @@ const MUTANTS = [
     ['checked or automatic placement', DISPLAY, 'if (checkedKeys.length > 0) return placeCheckedDots', 'if (checkedKeys.length > 99) return placeCheckedDots'],
     ['automatic: the fair share', DISPLAY, 'Math.floor(maxDots / connected.length)', 'Math.ceil(maxDots / connected.length)'],
     ['names hidden (D15)', DISPLAY, "isAgentNameShown ? ` ${state.agent.statusBarName}` : ''", '` ${state.agent.statusBarName}`'],
+    ['the separator between agents', DISPLAY, "const SEGMENT_SEPARATOR = '\\u2002|\\u2002';", "const SEGMENT_SEPARATOR = ' | ';"],
+    ['names hidden: compact labels (D20)', DISPLAY, 'isAgentNameShown ? window.label : (window.compactLabel ?? window.label)', 'window.label'],
+    ["agy's compact labels", 'src/features/antigravity-usage/antigravity-usage-core.js', 'if (compactLabel) window.compactLabel', 'if (false) window.compactLabel'],
     ['the hover Settings link (D14)', DISPLAY, '            `[$(gear) Settings](command:${commandIds.openSettings})`,\n', ''],
     ['checklist: the No reading now group', DISPLAY, '    if (unreadKeys.length > 0) {', '    if (unreadKeys.length > 99) {'],
     ['the 80% colour (D3)', DISPLAY, "if (percent >= WARNING_PERCENT) return '🟡';", "if (percent > WARNING_PERCENT) return '🟡';"],
@@ -41,8 +45,12 @@ const MUTANTS = [
     ['closing the popup drops the entry', 'src/vscode/status-bar.js', '            item.hide();\n            item.show();', '            item.show();'],
     ['backoff doubling', POLLING, 'previous.failMs * 2', 'previous.failMs * 3'],
     ['a forced read never cuts a rate limit', POLLING, 'return isForced && !isRateLimited;', 'return isForced;'],
+    ["grok's own updater off for grok agent stdio", GROK, "[AUTO_UPDATER_OFF_VARIABLE]: '1'", "[AUTO_UPDATER_OFF_VARIABLE]: '0'"],
+    ["Grok: a missing percentage reads as 0%", GROK, 'return limit > 0 ? Math.min(100, (used / limit) * 100) : 0;', 'return limit > 0 ? Math.min(100, (used / limit) * 100) : undefined;'],
+    ['Grok: the wait after a failed renewal', GROK, 'return nowMs - failedRenewal.attemptedAtMs >= RENEWAL_RETRY_MS;', 'return true;'],
     ["Grok's expiry check (D9)", 'src/features/grok-usage/grok-usage-core.js', 'session.expiresAt.getTime() <= now.getTime()', 'session.expiresAt.getTime() < now.getTime() - 86400000'],
     ["agy's remaining_fraction inversion", 'src/features/antigravity-usage/antigravity-usage-core.js', 'toUsedPercent((1 - remaining) * 100)', 'toUsedPercent(remaining * 100)'],
+    ["agy's auto-update off for the quota read", 'src/features/antigravity-usage/antigravity-usage-core.js', "[AUTO_UPDATE_OFF_VARIABLE]: 'true'", "[AUTO_UPDATE_OFF_VARIABLE]: 'false'"],
     ['the keychain account rule', CLAUDE, 'PLAIN_ACCOUNT_NAME.test(name) ? name', 'name ? name'],
     ["Codex's weekly by length (D4)", 'src/features/codex-usage/codex-usage-core.js', 'minutes >= WEEKLY_MIN_MINUTES', 'minutes > 999999'],
     ["Claude's model windows", CLAUDE, "if (item?.kind !== 'weekly_scoped') continue;", "if (item?.kind !== 'weekly_all') continue;"],
@@ -61,9 +69,13 @@ function main() {
         return 1;
     }
     const notCaught = [];
-    for (const [rule, relativePath, original, replacement] of MUTANTS) {
+    for (const [rule, relativePath, lfOriginal, lfReplacement] of MUTANTS) {
         const filePath = path.join(ROOT, relativePath);
         const text = fs.readFileSync(filePath, 'utf8');
+        // Git checks files out with CRLF on Windows, so a mutant's line breaks follow the file's own.
+        const lineBreak = text.includes('\r\n') ? '\r\n' : '\n';
+        const original = lfOriginal.replaceAll('\n', lineBreak);
+        const replacement = lfReplacement.replaceAll('\n', lineBreak);
         const occurrences = text.split(original).length - 1;
         if (occurrences !== 1) {
             process.stdout.write(`NOT APPLIED  ${rule}: its text occurs ${occurrences} times in ${relativePath}\n`);

@@ -18,7 +18,9 @@ the VS Code status bar. Click the item for every agent's details.
   - four agents get one each;
   - dots left over go to the first agent in `agentUsage.agents` (Claude by default).
 - **Shorter**: turn off `agentUsage.isAgentNameShown` to show each agent's icon without its name:
-  `✦ 🟢 5h 27% | 🤖 🟢 5h 11%`.
+  `✦ 🟢 5h 27% | 🤖 🟢 5h 11%`. Antigravity's model groups then show as VS Code's brand icons too: `Gemini 5h`
+  becomes the Gemini icon and `5h`, and `Claude and GPT 5h` the Claude and OpenAI icons and `5h`. These icons need
+  VS Code 1.131 or later.
 - **Dot colours**: 🟢 below 80%, 🟡 80–94%, 🔴 from 95%.
 - **`$(warning)` beside an agent**: its last read failed. The numbers shown are the last good ones, and the popup says
   why.
@@ -42,8 +44,8 @@ its links, or press Escape. Resting the mouse on the item opens the same popup a
 |---|---|---|
 | Claude Code | `GET api.anthropic.com/api/oauth/usage` | Read where Claude Code keeps it (see below). |
 | Codex | `codex -s read-only -a never app-server`, JSON-RPC `account/rateLimits/read` | None: Codex reads and renews its own login. |
-| Grok | `GET cli-chat-proxy.grok.com/v1/billing?format=credits` | `auth.json` in `GROK_HOME` (default `~/.grok`), used only while unexpired. |
-| Antigravity | `agy -p /quota --output-format json` | None: agy signs itself in. |
+| Grok | `GET cli-chat-proxy.grok.com/v1/billing?format=credits` | `auth.json` in `GROK_HOME` (default `~/.grok`), used only while unexpired; grok renews it (below). |
+| Antigravity | `agy -p /quota --output-format json`, with `AGY_CLI_DISABLE_AUTO_UPDATE=true` | None: agy signs itself in. |
 
 **Claude Code's token** is taken from the first of these that holds it:
 1. `CLAUDE_CODE_OAUTH_TOKEN`.
@@ -51,8 +53,14 @@ its links, or press Escape. Resting the mouse on the item opens the same popup a
 3. On Windows, when Claude Code's Credential Manager rollout is on, the Credential Manager entry
    `Claude Code-credentials/claude-code-user`; otherwise `%USERPROFILE%\.claude\.credentials.json`.
 
-**Grok's token is never renewed.** Its refresh token rotates, and a renewal outside `grok` can sign the CLI out. Grok's
-token lives 6 hours, so 6 hours after `grok` last ran, Grok reads "token expired" until `grok` runs again.
+**AgentUsage never renews Grok's token; grok does.** Grok's refresh token rotates, and a renewal outside `grok` can sign
+the CLI out. The token lives 6 hours. Once it has expired, AgentUsage starts `grok agent stdio` (hidden, with grok's own
+updater off) and sends it ACP `initialize`, during which grok renews the token itself, under its own lock, and writes
+it back; AgentUsage then reads the new one. Only when grok cannot renew, for example when its sign-in has lapsed,
+does Grok read "token expired" until you run `grok` and sign in.
+
+**agy's auto-update is off for AgentUsage's reads.** About every 15 minutes, an `agy` run starts agy's background
+updater, which on Windows flashes a console window on the desktop. agy still updates itself when you run it.
 
 **What is sent where:** tokens go only to their own service, and are never stored or logged. The usage endpoints are
 unofficial and can change without notice.
@@ -67,6 +75,7 @@ unofficial and can change without notice.
 | `agentUsage.agents` | all four | agents to read, in status bar order |
 | `agentUsage.refreshIntervalSeconds` | `60` | seconds between reads (at least 30). Each VS Code window reads on its own |
 | `agentUsage.codexCommand` | `codex` | the Codex command, on VS Code's PATH or a full path |
+| `agentUsage.grokCommand` | `grok` | the Grok command, started only when Grok's token has expired, so grok renews it; on VS Code's PATH or a full path |
 | `agentUsage.antigravityCommand` | `agy` | the Antigravity command, on VS Code's PATH or a full path |
 | `agentUsage.logVerbosity` | `off` | detail in the **AgentUsage** output channel; errors and warnings always log |
 

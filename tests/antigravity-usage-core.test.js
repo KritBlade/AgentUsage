@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { parseAntigravityQuota } = require('../src/features/antigravity-usage/antigravity-usage-core.js');
+const { parseAntigravityQuota, quotaEnvironmentVariables } = require('../src/features/antigravity-usage/antigravity-usage-core.js');
 
 /** `agy -p /quota --output-format json` on 2026-11-17 at 20:39 UTC, with the descriptions trimmed. */
 const LIVE_OUTPUT = JSON.stringify({
@@ -50,6 +50,31 @@ test('the 2026-11-17 output gives four windows, 5h before weekly in each group',
     assert.deepEqual(droppedBuckets, []);
 });
 
+test('a compact label puts brand icons in place of the group\'s model names', () => {
+    const output = JSON.stringify({
+        status: 'SUCCESS',
+        command: {
+            data: {
+                groups: [
+                    { name: 'Gemini Models', buckets: [{ id: 'gemini-5h', window: '5h', remaining_fraction: 1, reset_time: '2026-11-19T14:52:59Z' }] },
+                    { name: 'Claude and GPT models', buckets: [{ id: '3p-weekly', window: 'weekly', remaining_fraction: 1, reset_time: '2026-11-26T09:52:59Z' }] },
+                    { name: 'Gemini 4 Argon', buckets: [{ id: 'gemini-argon-wtu-weekly', window: 'weekly', remaining_fraction: 1, reset_time: '2026-11-26T09:52:59Z' }] },
+                    { name: 'Other models', buckets: [{ id: 'other-weekly', window: 'weekly', remaining_fraction: 1, reset_time: '2026-11-26T09:52:59Z' }] },
+                ],
+            },
+        },
+    });
+    assert.deepEqual(
+        parseAntigravityQuota(output, new Date()).snapshot.windows.map((window) => [window.label, window.compactLabel]),
+        [
+            ['Gemini 5h', '$(google-gemini) 5h'],
+            ['Claude and GPT Weekly', '$(claude)$(openai) Weekly'],
+            ['Gemini 4 Argon Weekly', '$(google-gemini) 4 Argon Weekly'],
+            ['Other Weekly', undefined],
+        ],
+    );
+});
+
 test('output that is not JSON is a problem quoting its first line', () => {
     const { problem } = parseAntigravityQuota('You are not logged into Antigravity.\nRun agy to sign in.', new Date());
     assert.match(problem, /^agy printed no JSON \(SyntaxError\): You are not logged into Antigravity\.$/);
@@ -73,4 +98,10 @@ test('a bucket without a remaining fraction is dropped and named', () => {
 
 test('an answer without groups is a problem', () => {
     assert.equal(parseAntigravityQuota(JSON.stringify({ status: 'SUCCESS', command: {} }), new Date()).problem, 'agy answered without quota groups');
+});
+
+test("the quota read turns agy's auto-update off and keeps every other variable", () => {
+    const given = { PATH: 'C:\\Users\\someone\\AppData\\Local\\agy\\bin', AGY_CLI_DISABLE_AUTO_UPDATE: 'false' };
+    assert.deepEqual(quotaEnvironmentVariables(given), { PATH: 'C:\\Users\\someone\\AppData\\Local\\agy\\bin', AGY_CLI_DISABLE_AUTO_UPDATE: 'true' });
+    assert.equal(given.AGY_CLI_DISABLE_AUTO_UPDATE, 'false');
 });
